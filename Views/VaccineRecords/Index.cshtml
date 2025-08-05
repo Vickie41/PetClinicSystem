@@ -1,0 +1,71 @@
+﻿@model IEnumerable<PetClinicSystem.Models.VaccineRecord>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.DateGiven)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.NextDueDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.LotNumber)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Notes)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.AdministeredByNavigation)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Patient)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Vaccine)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.DateGiven)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.NextDueDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.LotNumber)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Notes)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.AdministeredByNavigation.UserId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Patient.PatientId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Vaccine.VaccineId)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.RecordId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.RecordId">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.RecordId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

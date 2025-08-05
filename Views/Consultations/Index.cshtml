@@ -1,0 +1,101 @@
+﻿@model IEnumerable<PetClinicSystem.Models.Consultation>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.ConsultationDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Weight)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Temperature)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.HeartRate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.RespirationRate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Diagnosis)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Notes)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.FollowUpDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsFollowUp)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Appointment)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Patient)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Vet)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.ConsultationDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Weight)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Temperature)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.HeartRate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.RespirationRate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Diagnosis)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Notes)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.FollowUpDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsFollowUp)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Appointment.AppointmentId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Patient.PatientId)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Vet.UserId)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.ConsultationId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.ConsultationId">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.ConsultationId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

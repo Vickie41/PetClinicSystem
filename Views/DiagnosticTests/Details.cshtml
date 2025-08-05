@@ -1,0 +1,66 @@
+﻿@model PetClinicSystem.Models.DiagnosticTest
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>DiagnosticTest</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.TestType)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.TestType)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.TestName)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.TestName)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.TestDate)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.TestDate)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Results)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Results)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Notes)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Notes)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Status)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Status)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.FilePath)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.FilePath)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Consultation)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Consultation.ConsultationId)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model?.TestId">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

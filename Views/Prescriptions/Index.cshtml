@@ -1,0 +1,83 @@
+﻿@model IEnumerable<PetClinicSystem.Models.Prescription>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.MedicationName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Dosage)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Frequency)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Duration)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Instructions)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PrescribedDate)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.IsDispensed)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Refills)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Consultation)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.MedicationName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Dosage)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Frequency)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Duration)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Instructions)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.PrescribedDate)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.IsDispensed)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Refills)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Consultation.ConsultationId)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.PrescriptionId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.PrescriptionId">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.PrescriptionId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

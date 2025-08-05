@@ -1,0 +1,548 @@
+﻿@model ClientDashboardViewModel
+@{
+    ViewData["Title"] = "Client Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Client Dashboard Header -->
+<div class="dashboard-header client-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="dashboard-title">My Dashboard</h1>
+                <p class="dashboard-subtitle">Welcome back, @User.Identity.Name!</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="dashboard-date">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    <span id="currentDate">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Client Stats -->
+<div class="container-fluid mt-4">
+    <div class="row g-4">
+        <!-- My Pets -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card pets-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">My Pets</h5>
+                            <h2 class="stat-value">@Model.MyPets.Count</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-paw"></i>
+                        </div>
+                    </div>
+                    <div class="pets-preview mt-3">
+                        @foreach (var pet in Model.MyPets.Take(2))
+                        {
+                            <div class="pet-item">
+                                <i class="fas fa-circle pet-dot"></i>
+                                <span class="pet-text">@pet.Name (@pet.Species)</span>
+                            </div>
+                        }
+                    </div>
+                    <a href="/Patients" class="stat-link">View all pets <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Appointments -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card appointments-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Upcoming Appointments</h5>
+                            <h2 class="stat-value">@Model.UpcomingAppointments.Count</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                    </div>
+                    <div class="appointments-preview mt-3">
+                        @foreach (var appointment in Model.UpcomingAppointments.Take(2))
+                        {
+                            <div class="appointment-item">
+                                <i class="fas fa-circle appointment-dot"></i>
+                                <span class="appointment-text">@appointment.AppointmentDate.ToString("MMM dd") - @appointment.Patient.Name</span>
+                            </div>
+                        }
+                    </div>
+                    <a href="/Appointments" class="stat-link">View all appointments <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vaccinations Due -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card vaccines-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Vaccinations Due</h5>
+                            <h2 class="stat-value">@Model.UpcomingVaccinations.Count</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-syringe"></i>
+                        </div>
+                    </div>
+                    <div class="vaccines-preview mt-3">
+                        @foreach (var vaccine in Model.UpcomingVaccinations.Take(2))
+                        {
+                            <div class="vaccine-item">
+                                <i class="fas fa-circle vaccine-dot"></i>
+                                <span class="vaccine-text">@vaccine.Vaccine.Name - @vaccine.Patient.Name</span>
+                            </div>
+                        }
+                    </div>
+                    <a href="/VaccineRecords" class="stat-link">View all vaccinations <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Account Balance -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card balance-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Account Balance</h5>
+                            <h2 class="stat-value">@Model.OutstandingBalance.ToString("C")</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/Billings" class="btn btn-primary w-100">Make a Payment</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Area -->
+<div class="container-fluid mt-4">
+    <div class="row g-4">
+        <!-- My Pets -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-paw me-2"></i>My Pets
+                    </h5>
+                    <div class="card-actions">
+                        <a href="/Patients/Create" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i> Add Pet
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Species</th>
+                                    <th>Breed</th>
+                                    <th>Age</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var pet in Model.MyPets)
+                                {
+                                    <tr>
+                                        <td>
+                                            <a href="/Patients/Details/@pet.PatientId" class="fw-bold">@pet.Name</a>
+                                        </td>
+                                        <td>@pet.Species</td>
+                                        <td>@pet.Breed</td>
+                                        <td>
+                                            @if (pet.DateOfBirth.HasValue)
+                                            {
+                                                var birthDate = pet.DateOfBirth.Value;
+                                                var today = DateOnly.FromDateTime(DateTime.Today);
+                                                var age = today.Year - birthDate.Year;
+
+                                                // Adjust age if the birthday hasn't occurred yet this year
+                                                if (birthDate > today.AddYears(-age))
+                                                {
+                                                    age--;
+                                                }
+                                                <span>@age years</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Unknown</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Upcoming Appointments & Vaccinations -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Upcoming Appointments
+                    </h5>
+                    <div class="card-actions">
+                        <a href="/Appointments/Schedule" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i> Schedule
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach (var appointment in Model.UpcomingAppointments)
+                        {
+                            <a href="/Appointments/Details/@appointment.AppointmentId" class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold">@appointment.Patient.Name - @appointment.Reason</div>
+                                        <div class="text-muted small">@appointment.AppointmentDate.ToString("MMM dd, h:mm tt") with Dr. @appointment.Vet.LastName</div>
+                                    </div>
+                                    <span class="badge bg-info">@appointment.Status</span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-syringe me-2"></i>Upcoming Vaccinations
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach (var vaccine in Model.UpcomingVaccinations)
+                        {
+                            <a href="/VaccineRecords/Details/@vaccine.RecordId" class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold">@vaccine.Vaccine.Name</div>
+                                        <div class="text-muted small">@vaccine.Patient.Name - Due @vaccine.NextDueDate?.ToString("MMM dd, yyyy")</div>
+                                    </div>
+                                    @{
+                                        var isOverdue = vaccine.NextDueDate.HasValue &&
+                                        vaccine.NextDueDate.Value.ToDateTime(TimeOnly.MinValue) < DateTime.Today;
+                                    }
+                                    <span class="badge bg-@(isOverdue ? "danger" : "warning")">
+                                        @(isOverdue ? "Overdue" : "Due Soon")
+                                    </span>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Active Prescriptions -->
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-prescription-bottle-alt me-2"></i>Active Prescriptions
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Medication</th>
+                            <th>Pet</th>
+                            <th>Prescribed</th>
+                            <th>Instructions</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var prescription in Model.ActivePrescriptions)
+                        {
+                            <tr>
+                                <td>@prescription.MedicationName</td>
+                                <td>@prescription.Consultation.Patient.Name</td>
+                                <td>@prescription.PrescribedDate?.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="popover"
+                                            title="Instructions"
+                                            data-bs-content="@prescription.Instructions">
+                                        View
+                                    </button>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(prescription.IsDispensed.GetValueOrDefault() ? "success" : "warning")">
+                                        @(prescription.IsDispensed.GetValueOrDefault() ? "Dispensed" : "Pending")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Client Dashboard Specific Styles */
+        .client-header {
+            background: linear-gradient(135deg, #8E2DE2 0%, #4A00E0 100%);
+            color: white;
+            border-bottom: none;
+        }
+
+            .client-header .dashboard-title,
+            .client-header .dashboard-subtitle,
+            .client-header .dashboard-date {
+                color: white;
+            }
+
+        /* Stat Cards */
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            }
+
+            .stat-card:before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+            }
+
+        .pets-card:before {
+            background: linear-gradient(90deg, #FF416C, #FF4B2B);
+        }
+
+        .appointments-card:before {
+            background: linear-gradient(90deg, #4776E6, #8E54E9);
+        }
+
+        .vaccines-card:before {
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+        }
+
+        .balance-card:before {
+            background: linear-gradient(90deg, #F7971E, #FFD200);
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.1;
+            color: #2c3e50;
+        }
+
+        .stat-link {
+            display: inline-block;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .stat-link:hover {
+                text-decoration: underline;
+            }
+
+        /* Pets Preview */
+        .pets-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .pet-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pet-dot {
+            font-size: 0.5rem;
+            color: #FF416C;
+        }
+
+        .pet-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Appointments Preview */
+        .appointments-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .appointment-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .appointment-dot {
+            font-size: 0.5rem;
+            color: #4776E6;
+        }
+
+        .appointment-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Vaccines Preview */
+        .vaccines-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .vaccine-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .vaccine-dot {
+            font-size: 0.5rem;
+            color: #00b09b;
+        }
+
+        .vaccine-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Card Header Styles */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0;
+            color: #2c3e50;
+        }
+
+        .card-actions .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8125rem;
+        }
+
+        /* Table Styles */
+        .table {
+            font-size: 0.875rem;
+        }
+
+            .table th {
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.75rem;
+                letter-spacing: 0.5px;
+                color: #6c757d;
+                border-top: none;
+            }
+
+            .table td {
+                vertical-align: middle;
+            }
+
+        /* List Group Styles */
+        .list-group-item {
+            padding: 1rem 1.5rem;
+            border-left: none;
+            border-right: none;
+        }
+
+            .list-group-item:first-child {
+                border-top: none;
+            }
+
+        /* Responsive Adjustments */
+        @@media (max-width: 768px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .stat-icon {
+                font-size: 2rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize popovers
+            $('[data-bs-toggle="popover"]').popover({
+                trigger: 'focus'
+            });
+        });
+    </script>
+}

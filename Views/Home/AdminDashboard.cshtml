@@ -1,0 +1,656 @@
+﻿@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Admin Dashboard Header -->
+<div class="dashboard-header admin-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="dashboard-title">Admin Dashboard</h1>
+                <p class="dashboard-subtitle">Welcome back, @User.Identity.Name! Here's your clinic overview.</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="dashboard-date">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    <span id="currentDate">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Admin Stats -->
+<div class="container-fluid mt-4">
+    <div class="row g-4">
+        <!-- Clinic Overview -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card clinic-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Clinic Overview</h5>
+                            <h2 class="stat-value">@Model.ActivePatientsCount</h2>
+                            <span class="stat-subtext">Active Patients</span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-clinic-medical"></i>
+                        </div>
+                    </div>
+                    <div class="stat-details mt-3">
+                        <div class="detail-item">
+                            <span class="detail-label">Veterinarians</span>
+                            <span class="detail-value">@Model.ActiveVets</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Staff Members</span>
+                            <span class="detail-value">@Model.ActiveStaff</span>
+                        </div>
+                    </div>
+                    <a href="/Admin/Users" class="stat-link">Manage Users <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card financial-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Financial Summary</h5>
+                            <h2 class="stat-value">@Model.MonthlyRevenue.ToString("C")</h2>
+                            <span class="stat-subtext">This Month</span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                    <div class="stat-comparison mt-3">
+                        @if (Model.RevenueChangePercentage >= 0)
+                        {
+                            <span class="comparison positive">
+                                <i class="fas fa-arrow-up"></i> @Model.RevenueChangePercentage.ToString("0.0")% from last month
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="comparison negative">
+                                <i class="fas fa-arrow-down"></i> @Math.Abs(Model.RevenueChangePercentage).ToString("0.0")% from last month
+                            </span>
+                        }
+                    </div>
+                    <div class="stat-details mt-2">
+                        <div class="detail-item">
+                            <span class="detail-label">Year to Date</span>
+                            <span class="detail-value">@Model.YearlyRevenue.ToString("C")</span>
+                        </div>
+                    </div>
+                    <a href="/Billings" class="stat-link">View Financial Reports <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Activity -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card activity-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Today's Activity</h5>
+                            <h2 class="stat-value">@Model.TodayAppointmentsCount</h2>
+                            <span class="stat-subtext">Appointments</span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                    </div>
+                    <div class="stat-details mt-3">
+                        <div class="detail-item">
+                            <span class="detail-label">Completed</span>
+                            <span class="detail-value">@Model.CompletedAppointmentsCount</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Pending</span>
+                            <span class="detail-value">@(Model.TodayAppointmentsCount - Model.CompletedAppointmentsCount)</span>
+                        </div>
+                    </div>
+                    <a href="/Appointments" class="stat-link">View Appointments <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Alerts -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card alerts-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Health Alerts</h5>
+                            <h2 class="stat-value">@Model.VaccinationsDueCount</h2>
+                            <span class="stat-subtext">Vaccinations Due</span>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                    <div class="stat-alert mt-3">
+                        @if (Model.OverdueVaccinationsCount > 0)
+                        {
+                            <div class="alert alert-danger p-2 mb-2">
+                                <i class="fas fa-clock me-2"></i>
+                                <strong>@Model.OverdueVaccinationsCount overdue</strong> vaccinations
+                            </div>
+                        }
+                        <div class="alert alert-warning p-2 mb-0">
+                            <i class="fas fa-dog me-2"></i>
+                            <strong>@Model.DogsCount dogs</strong> and <strong>@Model.CatsCount cats</strong> in care
+                        </div>
+                    </div>
+                    <a href="/VaccineRecords" class="stat-link">View Vaccination Records <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Area -->
+<div class="container-fluid mt-4">
+    <div class="row g-4">
+        <!-- Revenue & Appointments Chart -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Clinic Performance
+                    </h5>
+                    <div class="card-actions">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-secondary active" data-period="month">Month</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-period="quarter">Quarter</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-period="year">Year</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <canvas id="revenueChart" height="250"></canvas>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <canvas id="appointmentsChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Payments -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-credit-card me-2"></i>Recent Payments
+                    </h5>
+                    <div class="card-actions">
+                        <a href="/Billings" class="btn btn-sm btn-link">View All</a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var payment in Model.RecentPayments)
+                                {
+                                    <tr>
+                                        <td>@payment.BillDate?.ToString("MMM dd")</td>
+                                        <td>@payment.TotalAmount.ToString("C")</td>
+                                        <td>
+                                            <span class="badge bg-success">Paid</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Second Row -->
+<div class="container-fluid mt-4">
+    <div class="row g-4">
+        <!-- Upcoming Appointments -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Upcoming Appointments
+                    </h5>
+                    <div class="card-actions">
+                        <a href="/Appointments/Schedule" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i> Schedule
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Patient</th>
+                                    <th>Owner</th>
+                                    <th>Veterinarian</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var appointment in Model.UpcomingAppointments)
+                                {
+                                    <tr>
+                                        <td>@appointment.AppointmentDate.ToString("h:mm tt")</td>
+                                        <td>@appointment.Patient.Name</td>
+                                        <td>@appointment.Patient.Owner.FirstName @appointment.Patient.Owner.LastName</td>
+                                        <td>Dr. @appointment.Vet.LastName</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Distribution -->
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-paw me-2"></i>Patient Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="speciesChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revenue by Service -->
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-dollar-sign me-2"></i>Revenue by Service
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="revenueByServiceChart" height="250"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Admin Dashboard Specific Styles */
+        .admin-header {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            border-bottom: none;
+        }
+
+            .admin-header .dashboard-title,
+            .admin-header .dashboard-subtitle,
+            .admin-header .dashboard-date {
+                color: white;
+            }
+
+        /* Stat Cards */
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            }
+
+            .stat-card:before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+            }
+
+        .clinic-card:before {
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+        }
+
+        .financial-card:before {
+            background: linear-gradient(90deg, #4776E6, #8E54E9);
+        }
+
+        .activity-card:before {
+            background: linear-gradient(90deg, #FF416C, #FF4B2B);
+        }
+
+        .alerts-card:before {
+            background: linear-gradient(90deg, #F7971E, #FFD200);
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-subtext {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.1;
+            color: #2c3e50;
+        }
+
+        .stat-link {
+            display: inline-block;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .stat-link:hover {
+                text-decoration: underline;
+            }
+
+        .stat-details {
+            margin-top: 1.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        .detail-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .comparison {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+            .comparison.positive {
+                color: #28a745;
+            }
+
+            .comparison.negative {
+                color: #dc3545;
+            }
+
+        .stat-alert .alert {
+            font-size: 0.8125rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Card Header Styles */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0;
+            color: #2c3e50;
+        }
+
+        .card-actions .btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8125rem;
+        }
+
+        /* Table Styles */
+        .table {
+            font-size: 0.875rem;
+        }
+
+            .table th {
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 0.75rem;
+                letter-spacing: 0.5px;
+                color: #6c757d;
+                border-top: none;
+            }
+
+            .table td {
+                vertical-align: middle;
+            }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+
+        /* Responsive Adjustments */
+        @@media (max-width: 768px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .stat-icon {
+                font-size: 2rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Species Distribution Chart
+            const speciesCtx = document.getElementById('speciesChart').getContext('2d');
+            const speciesChart = new Chart(speciesCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(@Html.Raw(Json.Serialize(Model.SpeciesDistribution))),
+                    datasets: [{
+                        data: Object.values(@Html.Raw(Json.Serialize(Model.SpeciesDistribution))),
+                        backgroundColor: [
+                            '#3498db',
+                            '#2ecc71',
+                            '#f1c40f',
+                            '#e74c3c',
+                            '#9b59b6',
+                            '#1abc9c'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Revenue by Service Chart
+            const revenueServiceCtx = document.getElementById('revenueByServiceChart').getContext('2d');
+            const revenueServiceChart = new Chart(revenueServiceCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(@Html.Raw(Json.Serialize(Model.RevenueByService))),
+                    datasets: [{
+                        data: Object.values(@Html.Raw(Json.Serialize(Model.RevenueByService))),
+                        backgroundColor: '#4776E6',
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Revenue Chart (sample data - replace with actual)
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            const revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(@Html.Raw(Json.Serialize(Model.MonthlyAppointments))),
+                    datasets: [{
+                        label: 'Revenue',
+                        data: [1200, 1900, 1500, 2100, 1800, 2500],
+                        backgroundColor: 'rgba(71, 118, 230, 0.1)',
+                        borderColor: '#4776E6',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Monthly Revenue',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Appointments Chart (sample data - replace with actual)
+            const appointmentsCtx = document.getElementById('appointmentsChart').getContext('2d');
+            const appointmentsChart = new Chart(appointmentsCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(@Html.Raw(Json.Serialize(Model.MonthlyAppointments))),
+                    datasets: [{
+                        label: 'Appointments',
+                        data: Object.values(@Html.Raw(Json.Serialize(Model.MonthlyAppointments))),
+                        backgroundColor: '#FF416C',
+                        borderWidth: 0,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Monthly Appointments',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Period switcher
+            $('[data-period]').click(function() {
+                $('[data-period]').removeClass('active');
+                $(this).addClass('active');
+                // Here you would typically reload the chart data based on the selected period
+                // For now we'll just show a toast notification
+                const period = $(this).data('period');
+                toastr.info(`Showing data for ${period}`);
+            });
+        });
+    </script>
+}

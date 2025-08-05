@@ -30,4 +30,8 @@ public partial class User
     public virtual ICollection<Consultation> Consultations { get; set; } = new List<Consultation>();
 
     public virtual ICollection<VaccineRecord> VaccineRecords { get; set; } = new List<VaccineRecord>();
+
+    public int? OwnerId { get; set; }  // Nullable if not all users are owners
+    public virtual Owner Owner { get; set; }
+
 }

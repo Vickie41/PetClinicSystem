@@ -1,0 +1,75 @@
+﻿@model PetClinicSystem.Models.Consultation
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>Consultation</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="AppointmentId" class="control-label"></label>
+                <select asp-for="AppointmentId" class ="form-control" asp-items="ViewBag.AppointmentId"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="VetId" class="control-label"></label>
+                <select asp-for="VetId" class ="form-control" asp-items="ViewBag.VetId"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="PatientId" class="control-label"></label>
+                <select asp-for="PatientId" class ="form-control" asp-items="ViewBag.PatientId"></select>
+            </div>
+            <div class="form-group">
+                <label asp-for="Weight" class="control-label"></label>
+                <input asp-for="Weight" class="form-control" />
+                <span asp-validation-for="Weight" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Temperature" class="control-label"></label>
+                <input asp-for="Temperature" class="form-control" />
+                <span asp-validation-for="Temperature" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="HeartRate" class="control-label"></label>
+                <input asp-for="HeartRate" class="form-control" />
+                <span asp-validation-for="HeartRate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="RespirationRate" class="control-label"></label>
+                <input asp-for="RespirationRate" class="form-control" />
+                <span asp-validation-for="RespirationRate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Diagnosis" class="control-label"></label>
+                <input asp-for="Diagnosis" class="form-control" />
+                <span asp-validation-for="Diagnosis" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Notes" class="control-label"></label>
+                <input asp-for="Notes" class="form-control" />
+                <span asp-validation-for="Notes" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="FollowUpDate" class="control-label"></label>
+                <input asp-for="FollowUpDate" class="form-control" />
+                <span asp-validation-for="FollowUpDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -1,0 +1,555 @@
+﻿@model VetDashboardViewModel
+@{
+    ViewData["Title"] = "Veterinarian Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Vet Dashboard Header -->
+<div class="dashboard-header vet-header">
+    <div class="container-fluid">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="dashboard-title">Veterinarian Dashboard</h1>
+                <p class="dashboard-subtitle">Welcome back, Dr. @User.Identity.Name! Here's your daily overview.</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <div class="dashboard-date">
+                    <i class="fas fa-calendar-day me-2"></i>
+                    <span id="currentDate">@DateTime.Now.ToString("dddd, MMMM dd, yyyy")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Vet Stats -->
+<div class="container-fluid mt-4">
+    <div class="row g-4">
+        <!-- Today's Appointments -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card appointments-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Today's Appointments</h5>
+                            <h2 class="stat-value">@Model.MyAppointmentsToday</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                    </div>
+                    <div class="stat-details mt-3">
+                        <div class="detail-item">
+                            <span class="detail-label">Completed</span>
+                            <span class="detail-value">@Model.MyCompletedAppointments</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Pending</span>
+                            <span class="detail-value">@(Model.MyAppointmentsToday - Model.MyCompletedAppointments)</span>
+                        </div>
+                    </div>
+                    <a href="/Appointments" class="stat-link">View all appointments <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patients to Follow Up -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card followup-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Follow-ups Needed</h5>
+                            <h2 class="stat-value">@Model.PatientsToFollowUp</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                    </div>
+                    <div class="stat-progress mt-3">
+                        <div class="progress">
+                            <div class="progress-bar" role="progressbar" style="width: @((Model.PatientsToFollowUp / (double)(Model.PatientsToFollowUp + 10)) * 100)%"></div>
+                        </div>
+                    </div>
+                    <a href="/Consultations" class="stat-link">View consultations <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Patient Distribution -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card patients-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Patient Distribution</h5>
+                            <div class="species-distribution mt-2">
+                                @foreach (var species in Model.SpeciesDistribution.Take(2))
+                                {
+                                    <div class="species-item">
+                                        <span class="species-name">@species.Key</span>
+                                        <span class="species-count">@species.Value</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-paw"></i>
+                        </div>
+                    </div>
+                    <div class="chart-container mini-chart">
+                        <canvas id="speciesMiniChart"></canvas>
+                    </div>
+                    <a href="/Patients" class="stat-link">View all patients <i class="fas fa-arrow-right ms-2"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card stat-card activity-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="stat-title">Recent Activity</h5>
+                            <div class="activity-preview">
+                                @foreach (var activity in Model.RecentActivities.Take(2))
+                                {
+                                    <div class="activity-item">
+                                        <i class="fas fa-circle activity-dot"></i>
+                                        <span class="activity-text">@activity.Details</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="/ActivityLog" class="stat-link">View all activity <i class="fas fa-arrow-right ms-2"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Area -->
+<div class="container-fluid mt-4">
+    <div class="row g-4">
+        <!-- Upcoming Appointments -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-calendar-alt me-2"></i>Upcoming Appointments
+                    </h5>
+                    <div class="card-actions">
+                        <a href="/Appointments/Schedule" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i> Schedule New
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Patient</th>
+                                    <th>Owner</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var appointment in Model.UpcomingAppointments)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold">@appointment.AppointmentDate.ToString("MMM dd")</div>
+                                            <div class="text-muted small">@appointment.AppointmentDate.ToString("h:mm tt")</div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar avatar-sm me-2">
+                                                    <span class="avatar-text bg-primary rounded">@appointment.Patient.Name[0]</span>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">@appointment.Patient.Name</div>
+                                                    <div class="text-muted small">@appointment.Patient.Species</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>@appointment.Patient.Owner.FirstName @appointment.Patient.Owner.LastName</td>
+                                        <td>@appointment.Reason</td>
+                                        <td>
+                                            <span class="badge bg-info">@appointment.Status</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Patients & Prescriptions -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-md me-2"></i>Recent Patients
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach (var patient in Model.RecentPatients)
+                        {
+                            <a href="/Patients/Details/@patient.PatientId" class="list-group-item list-group-item-action">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm me-3">
+                                        <span class="avatar-text bg-@(patient.Species == "Dog" ? "warning" : "info") rounded">@patient.Name[0]</span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">@patient.Name</div>
+                                        <div class="text-muted small">@patient.Species, @patient.Breed</div>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-prescription-bottle-alt me-2"></i>Recent Prescriptions
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach (var prescription in Model.RecentPrescriptions)
+                        {
+                            <a href="/Prescriptions/Details/@prescription.PrescriptionId" class="list-group-item list-group-item-action">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold">@prescription.MedicationName</div>
+                                        <div class="text-muted small">@prescription.Consultation.Patient.Name</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="text-muted small">
+                                            @(prescription.PrescribedDate?.ToString("MMM dd") ?? "Not specified")
+                                        </div>
+                                        <span class="badge bg-@(prescription.IsDispensed.GetValueOrDefault() ? "success" : "warning")">
+                                            @(prescription.IsDispensed.GetValueOrDefault() ? "Dispensed" : "Pending")
+                                        </span>
+                                    </div>
+                                </div>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Appointments Trends -->
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-chart-bar me-2"></i>Appointments Trend
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="chart-container">
+                <canvas id="appointmentsTrendChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Vet Dashboard Specific Styles */
+        .vet-header {
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            color: white;
+            border-bottom: none;
+        }
+
+            .vet-header .dashboard-title,
+            .vet-header .dashboard-subtitle,
+            .vet-header .dashboard-date {
+                color: white;
+            }
+
+        /* Stat Cards */
+        .stat-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            }
+
+            .stat-card:before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+            }
+
+        .appointments-card:before {
+            background: linear-gradient(90deg, #FF416C, #FF4B2B);
+        }
+
+        .followup-card:before {
+            background: linear-gradient(90deg, #4776E6, #8E54E9);
+        }
+
+        .patients-card:before {
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+        }
+
+        .activity-card:before {
+            background: linear-gradient(90deg, #F7971E, #FFD200);
+        }
+
+        .stat-title {
+            font-size: 0.875rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.1;
+            color: #2c3e50;
+        }
+
+        .stat-link {
+            display: inline-block;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            color: #3498db;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+            .stat-link:hover {
+                text-decoration: underline;
+            }
+
+        .stat-details {
+            margin-top: 1.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .detail-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        .detail-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Species Distribution */
+        .species-distribution {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .species-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .species-name {
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+
+        .species-count {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        /* Mini Chart */
+        .mini-chart {
+            height: 80px;
+            margin-top: 1rem;
+        }
+
+        /* Activity Preview */
+        .activity-preview {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .activity-dot {
+            font-size: 0.5rem;
+            color: #4776E6;
+        }
+
+        .activity-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 150px;
+        }
+
+        /* Avatar */
+        .avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .avatar-sm {
+            width: 24px;
+            height: 24px;
+            font-size: 0.75rem;
+        }
+
+        .avatar-text {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            color: white;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        /* Responsive Adjustments */
+        @@media (max-width: 768px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .stat-icon {
+                font-size: 2rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Species Mini Chart
+            const speciesMiniCtx = document.getElementById('speciesMiniChart').getContext('2d');
+            const speciesMiniChart = new Chart(speciesMiniCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(@Html.Raw(Json.Serialize(Model.SpeciesDistribution))),
+                    datasets: [{
+                        data: Object.values(@Html.Raw(Json.Serialize(Model.SpeciesDistribution))),
+                        backgroundColor: [
+                            '#FF416C',
+                            '#4776E6',
+                            '#00b09b',
+                            '#F7971E',
+                            '#8E54E9',
+                            '#96c93d'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            // Appointments Trend Chart
+            const appointmentsTrendCtx = document.getElementById('appointmentsTrendChart').getContext('2d');
+            const appointmentsTrendChart = new Chart(appointmentsTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(@Html.Raw(Json.Serialize(Model.MonthlyAppointments))),
+                    datasets: [{
+                        label: 'Appointments',
+                        data: Object.values(@Html.Raw(Json.Serialize(Model.MonthlyAppointments))),
+                        backgroundColor: 'rgba(71, 118, 230, 0.1)',
+                        borderColor: '#4776E6',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}
