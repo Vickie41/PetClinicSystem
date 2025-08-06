@@ -31,5 +31,7 @@ public partial class Owner
 
     public DateTime? CreatedDate { get; set; }
 
+    public int? UserId { get; set; }
+
     public virtual ICollection<Patient> Patients { get; set; } = new List<Patient>();
 }

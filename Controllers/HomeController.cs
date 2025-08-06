@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PetClinicSystem.Models;
@@ -7,68 +6,45 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace VetClinicPro.Controllers
+namespace PetClinicSystem.Controllers
 {
     [Authorize]
     public class HomeController : Controller
     {
         private readonly PetClinicContext _context;
-        private readonly UserManager<User> _userManager;
 
-        public HomeController(PetClinicContext context, UserManager<User> userManager)
+        public HomeController(PetClinicContext context)
         {
             _context = context;
-            _userManager = userManager;
         }
 
-        public async Task<IActionResult> Dashboard()
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AdminDashboard()
         {
-            var user = await _userManager.GetUserAsync(User);
-
-            if (User.IsInRole("Admin"))
-            {
-                var model = await GetAdminDashboardData();
-                return View("AdminDashboard", model);
-            }
-            else if (User.IsInRole("Veterinarian"))
-            {
-                var model = await GetVetDashboardData(user.UserId);
-                return View("VetDashboard", model);
-            }
-            else if (User.IsInRole("Staff"))
-            {
-                var model = await GetStaffDashboardData();
-                return View("StaffDashboard", model);
-            }
-            else if (User.IsInRole("Client"))
-            {
-                var model = await GetClientDashboardData(user.UserId);
-                return View("ClientDashboard", model);
-            }
-
-            return View("Dashboard");
-        }
-
-        private async Task<AdminDashboardViewModel> GetAdminDashboardData()
-        {
-            var today = DateTime.Today;
-            var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
-            var firstDayOfYear = new DateTime(today.Year, 1, 1);
+            var todayDateOnly = DateOnly.FromDateTime(DateTime.Today);
+            var todayDateTime = DateTime.Today;
+            var firstDayOfMonth = new DateTime(todayDateTime.Year, todayDateTime.Month, 1);
+            var firstDayOfYear = new DateTime(todayDateTime.Year, 1, 1);
 
             var model = new AdminDashboardViewModel
             {
+                // Change from: .Count(p => p.IsActive.GetValueOrDefault())
                 TodayAppointmentsCount = await _context.Appointments
-                    .CountAsync(a => a.AppointmentDate.Date == today),
+                    .CountAsync(a => a.AppointmentDate.Date == todayDateTime),
                 CompletedAppointmentsCount = await _context.Appointments
-                    .CountAsync(a => a.AppointmentDate.Date == today && a.Status == "Completed"),
+                    .CountAsync(a => a.AppointmentDate.Date == todayDateTime && a.Status == "Completed"),
+                // Fix for nullable boolean
                 ActivePatientsCount = await _context.Patients
-                    .CountAsync(p => p.IsActive.GetValueOrDefault()),
+                    .CountAsync(p => p.IsActive.HasValue && p.IsActive.Value),
+                // Fix for nullable boolean
                 DogsCount = await _context.Patients
-                    .CountAsync(p => p.Species == "Dog" && p.IsActive.GetValueOrDefault()),
+                    .CountAsync(p => p.Species == "Dog" && p.IsActive.HasValue && p.IsActive.Value),
+                // Fix for nullable boolean
                 CatsCount = await _context.Patients
-                    .CountAsync(p => p.Species == "Cat" && p.IsActive.GetValueOrDefault()),
+                    .CountAsync(p => p.Species == "Cat" && p.IsActive.HasValue && p.IsActive.Value),
                 MonthlyRevenue = await _context.Billings
                     .Where(b => b.BillDate >= firstDayOfMonth && b.Status == "Paid")
                     .SumAsync(b => b.TotalAmount),
@@ -76,23 +52,25 @@ namespace VetClinicPro.Controllers
                     .Where(b => b.BillDate >= firstDayOfYear && b.Status == "Paid")
                     .SumAsync(b => b.TotalAmount),
                 VaccinationsDueCount = await _context.VaccineRecords
-                    .CountAsync(v => v.NextDueDate.HasValue &&
-                           v.NextDueDate.Value.ToDateTime(TimeOnly.MinValue) <= today.AddDays(30)),
+            .CountAsync(v => v.NextDueDate.HasValue &&
+                   v.NextDueDate <= todayDateOnly.AddDays(30)),
                 OverdueVaccinationsCount = await _context.VaccineRecords
-                    .CountAsync(v => v.NextDueDate.HasValue &&
-                           v.NextDueDate.Value.ToDateTime(TimeOnly.MinValue) < today),
+            .CountAsync(v => v.NextDueDate.HasValue &&
+                   v.NextDueDate < todayDateOnly),
                 TotalUsers = await _context.Users.CountAsync(),
                 NewUsersThisMonth = await _context.Users
                     .CountAsync(u => u.CreatedDate >= firstDayOfMonth),
+                // Fix for nullable boolean
                 ActiveVets = await _context.Users
-                    .CountAsync(u => u.Role == "Veterinarian" && u.IsActive.GetValueOrDefault()),
+                    .CountAsync(u => u.Role == "Veterinarian" && u.IsActive.HasValue && u.IsActive.Value),
+                // Fix for nullable boolean
                 ActiveStaff = await _context.Users
-                    .CountAsync(u => u.Role == "Staff" && u.IsActive.GetValueOrDefault()),
+                    .CountAsync(u => u.Role == "Staff" && u.IsActive.HasValue && u.IsActive.Value),
                 UpcomingAppointments = await _context.Appointments
                     .Include(a => a.Patient)
                         .ThenInclude(p => p.Owner)
                     .Include(a => a.Vet)
-                    .Where(a => a.AppointmentDate >= today && a.AppointmentDate <= today.AddDays(7))
+                    .Where(a => a.AppointmentDate >= todayDateTime && a.AppointmentDate <= todayDateTime.AddDays(7))
                     .OrderBy(a => a.AppointmentDate)
                     .Take(5)
                     .ToListAsync(),
@@ -105,8 +83,9 @@ namespace VetClinicPro.Controllers
                     .OrderByDescending(b => b.BillDate)
                     .Take(5)
                     .ToListAsync(),
+                // Fix for nullable boolean
                 SpeciesDistribution = await _context.Patients
-                    .Where(p => p.IsActive.GetValueOrDefault())
+                    .Where(p => p.IsActive.HasValue && p.IsActive.Value)
                     .GroupBy(p => p.Species)
                     .Select(g => new { Species = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(g => g.Species, g => g.Count),
@@ -137,11 +116,13 @@ namespace VetClinicPro.Controllers
             model.RevenueChangePercentage = lastMonthRevenue > 0 ?
                 ((model.MonthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
 
-            return model;
+            return View(model);
         }
 
-        private async Task<VetDashboardViewModel> GetVetDashboardData(int userId)
+        [Authorize(Roles = "Veterinarian")]
+        public async Task<IActionResult> VetDashboard()
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var today = DateTime.Today;
             var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
 
@@ -196,10 +177,11 @@ namespace VetClinicPro.Controllers
                     .ToDictionaryAsync(g => g.Month, g => g.Count)
             };
 
-            return model;
+            return View(model);
         }
 
-        private async Task<StaffDashboardViewModel> GetStaffDashboardData()
+        [Authorize(Roles = "Staff")]
+        public async Task<IActionResult> StaffDashboard()
         {
             var today = DateTime.Today;
             var firstDayOfMonth = new DateTime(today.Year, today.Month, 1);
@@ -245,61 +227,71 @@ namespace VetClinicPro.Controllers
                     .ToDictionaryAsync(g => g.Month, g => g.Count)
             };
 
-            return model;
+            return View(model);
         }
 
-        private async Task<ClientDashboardViewModel> GetClientDashboardData(int userId)
+        [Authorize(Roles = "Client")]
+        public async Task<IActionResult> ClientDashboard()
         {
-            var today = DateTime.Today;
-            var owner = await _context.Users
-                .Where(u => u.UserId == userId)
-                .Select(u => u.Owner)
-                .FirstOrDefaultAsync();
-
-            if (owner == null)
-            {
-                return new ClientDashboardViewModel();
-            }
-
+            // Initialize with default values
             var model = new ClientDashboardViewModel
             {
-                MyPets = await _context.Patients
-                    .Where(p => p.OwnerId == owner.OwnerId && p.IsActive.GetValueOrDefault())
-                    .ToListAsync(),
-                UpcomingAppointments = await _context.Appointments
-                    .Include(a => a.Patient)
-                    .Include(a => a.Vet)
-                    .Where(a => a.Patient.OwnerId == owner.OwnerId && a.AppointmentDate >= today)
-                    .OrderBy(a => a.AppointmentDate)
-                    .Take(5)
-                    .ToListAsync(),
-                UpcomingVaccinations = await _context.VaccineRecords
-                    .Include(v => v.Patient)
-                    .Include(v => v.Vaccine)
-                    .Where(v => v.Patient.OwnerId == owner.OwnerId &&
-                           v.NextDueDate.HasValue &&
-                           v.NextDueDate.Value.ToDateTime(TimeOnly.MinValue) >= today)
-                    .OrderBy(v => v.NextDueDate)
-                    .Take(5)
-                    .ToListAsync(),
-                ActivePrescriptions = await _context.Prescriptions
-                    .Include(p => p.Consultation)
-                        .ThenInclude(c => c.Patient)
-                    .Where(p => p.Consultation.Patient.OwnerId == owner.OwnerId &&
-                               p.PrescribedDate.HasValue &&
-                               p.PrescribedDate.Value.AddDays(30) >= today)
-                    .OrderByDescending(p => p.PrescribedDate)
-                    .Take(5)
-                    .ToListAsync(),
-                OutstandingBalance = await _context.Billings
-                    .Include(b => b.Consultation)
-                        .ThenInclude(c => c.Patient)
-                    .Where(b => b.Consultation.Patient.OwnerId == owner.OwnerId &&
-                           b.Status == "Pending")
-                    .SumAsync(b => b.Balance.GetValueOrDefault())
+                MyPets = new List<Patient>(),
+                UpcomingAppointments = new List<Appointment>(),
+                UpcomingVaccinations = new List<VaccineRecord>(),
+                ActivePrescriptions = new List<Prescription>(),
+                OutstandingBalance = 0
             };
 
-            return model;
+           
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+                if (owner != null)
+                {
+                    model.MyPets = await _context.Patients
+                        .Where(p => p.OwnerId == owner.OwnerId && p.IsActive.HasValue && p.IsActive.Value)
+                        .ToListAsync() ?? new List<Patient>();
+
+                    model.UpcomingAppointments = await _context.Appointments
+                        .Include(a => a.Patient)
+                        .Include(a => a.Vet)
+                        .Where(a => a.Patient.OwnerId == owner.OwnerId && a.AppointmentDate >= DateTime.Today)
+                        .OrderBy(a => a.AppointmentDate)
+                        .Take(5)
+                        .ToListAsync() ?? new List<Appointment>();
+
+                    model.UpcomingVaccinations = await _context.VaccineRecords
+                        .Include(v => v.Patient)
+                        .Include(v => v.Vaccine)
+                        .Where(v => v.Patient.OwnerId == owner.OwnerId &&
+                               v.NextDueDate.HasValue &&
+                               v.NextDueDate >= DateOnly.FromDateTime(DateTime.Today))
+                        .OrderBy(v => v.NextDueDate)
+                        .Take(5)
+                        .ToListAsync() ?? new List<VaccineRecord>();
+
+                    model.ActivePrescriptions = await _context.Prescriptions
+                        .Include(p => p.Consultation)
+                            .ThenInclude(c => c.Patient)
+                        .Where(p => p.Consultation.Patient.OwnerId == owner.OwnerId &&
+                                   p.PrescribedDate.HasValue &&
+                                   p.PrescribedDate.Value.AddDays(30) >= DateTime.Today)
+                        .OrderByDescending(p => p.PrescribedDate)
+                        .Take(5)
+                        .ToListAsync() ?? new List<Prescription>();
+
+                    model.OutstandingBalance = await _context.Billings
+                        .Include(b => b.Consultation)
+                            .ThenInclude(c => c.Patient)
+                        .Where(b => b.Consultation.Patient.OwnerId == owner.OwnerId &&
+                               b.Status == "Pending")
+                        .SumAsync(b => b.Balance.GetValueOrDefault());
+                }
+            
+           
+
+            return View(model);
         }
     }
 }

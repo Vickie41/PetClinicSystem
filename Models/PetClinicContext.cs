@@ -15,6 +15,8 @@ public partial class PetClinicContext : DbContext
     {
     }
 
+    public virtual DbSet<ActivityLog> ActivityLogs { get; set; }
+
     public virtual DbSet<Appointment> Appointments { get; set; }
 
     public virtual DbSet<Billing> Billings { get; set; }
@@ -41,14 +43,27 @@ public partial class PetClinicContext : DbContext
 
     public virtual DbSet<VaccineRecord> VaccineRecords { get; set; }
 
-    public virtual DbSet<ActivityLog> ActivityLogs { get; set; }
-
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=localhost;Database=PetClinic;Trusted_Connection=True;TrustServerCertificate=true");
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=localhost;Database=PetClinic;Integrated Security=True;TrustServerCertificate=True;Encrypt=False;Connect Timeout=30;Pooling=true;Max Pool Size=100;Connection Lifetime=30;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ActivityLog>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Activity__3214EC07B40ABE6D");
+
+            entity.ToTable("ActivityLog");
+
+            entity.Property(e => e.Action).HasMaxLength(100);
+            entity.Property(e => e.Timestamp).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Type).HasMaxLength(50);
+
+            entity.HasOne(d => d.User).WithMany(p => p.ActivityLogs)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_ActivityLog_User");
+        });
+
         modelBuilder.Entity<Appointment>(entity =>
         {
             entity.HasKey(e => e.AppointmentId).HasName("PK__Appointm__8ECDFCC27D42D763");
