@@ -30,4 +30,6 @@ public partial class Billing
     public virtual ICollection<BillingDetail> BillingDetails { get; set; } = new List<BillingDetail>();
 
     public virtual Consultation? Consultation { get; set; }
+    public virtual Patient Patient { get; set; }
+
 }

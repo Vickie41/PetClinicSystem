@@ -1,77 +1,72 @@
 ﻿@model IEnumerable<PetClinicSystem.Models.Appointment>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Appointments";
+    ViewData["ActivePage"] = "Appointments";
 }
 
-<h1>Index</h1>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-calendar-alt me-2"></i>@ViewData["Title"]
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a asp-action="Schedule" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Schedule Appointment
+            </a>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.AppointmentDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Duration)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Reason)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Status)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Notes)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.CreatedDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Patient)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Vet)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.AppointmentDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Duration)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Reason)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Status)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Notes)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.CreatedDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Patient.PatientId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Vet.UserId)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.AppointmentId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.AppointmentId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.AppointmentId">Delete</a>
-            </td>
-        </tr>
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <ul class="nav nav-tabs card-header-tabs" id="appointmentTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="upcoming-tab" data-bs-toggle="tab" data-bs-target="#upcoming" type="button" role="tab">
+                        Upcoming (@Model.Count(a => a.AppointmentDate >= DateTime.Today && a.Status != "Cancelled"))
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="completed-tab" data-bs-toggle="tab" data-bs-target="#completed" type="button" role="tab">
+                        Completed (@Model.Count(a => a.Status == "Completed"))
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="cancelled-tab" data-bs-toggle="tab" data-bs-target="#cancelled" type="button" role="tab">
+                        Cancelled (@Model.Count(a => a.Status == "Cancelled"))
+                    </button>
+                </li>
+            </ul>
+        </div>
+        <div class="card-body">
+            <div class="tab-content" id="appointmentTabsContent">
+                <div class="tab-pane fade show active" id="upcoming" role="tabpanel">
+                    @await Html.PartialAsync("_AppointmentList", Model.Where(a => a.AppointmentDate >= DateTime.Today && a.Status != "Cancelled").OrderBy(a => a.AppointmentDate))
+                </div>
+                <div class="tab-pane fade" id="completed" role="tabpanel">
+                    @await Html.PartialAsync("_AppointmentList", Model.Where(a => a.Status == "Completed").OrderByDescending(a => a.AppointmentDate))
+                </div>
+                <div class="tab-pane fade" id="cancelled" role="tabpanel">
+                    @await Html.PartialAsync("_AppointmentList", Model.Where(a => a.Status == "Cancelled").OrderByDescending(a => a.AppointmentDate))
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable for each tab
+            $('.appointment-table').DataTable({
+                responsive: true,
+                order: [[0, 'asc']],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search appointments...",
+                }
+            });
+        });
+    </script>
 }
-    </tbody>
-</table>

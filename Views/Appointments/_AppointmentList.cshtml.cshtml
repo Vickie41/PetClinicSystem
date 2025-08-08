@@ -1,0 +1,105 @@
+﻿@model IEnumerable<PetClinicSystem.Models.Appointment>
+
+<div class="table-responsive">
+    <table class="table table-hover appointment-table">
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Patient</th>
+                <th>Owner</th>
+                <th>Veterinarian</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        @item.AppointmentDate.ToString("MMM dd, yyyy h:mm tt")
+                        @if (item.Duration.HasValue)
+                        {
+                            <span class="d-block small text-muted">@item.Duration mins</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            @if (!string.IsNullOrEmpty(item.Patient?.PhotoPath))
+                            {
+                                <img src="@item.Patient.PhotoPath" class="avatar-xs rounded-circle me-2" alt="@item.Patient.Name">
+                            }
+                            @item.Patient?.Name
+                        </div>
+                    </td>
+                    <td>@item.Patient?.Owner?.FirstName @item.Patient?.Owner?.LastName</td>
+                    <td>Dr. @item.Vet?.LastName</td>
+                    <td>@item.Reason</td>
+                    <td>
+                        <span class="badge bg-@(item.Status == "Completed" ? "success" :
+                                                                          item.Status == "Cancelled" ? "danger" : "info")">
+                        @item.Status
+                    </span>
+                </td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <a asp-action="Details" asp-route-id="@item.AppointmentId" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        @if (item.Status != "Completed" && item.Status != "Cancelled")
+                            {
+                                <a asp-action="Edit" asp-route-id="@item.AppointmentId" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger cancel-btn" data-id="@item.AppointmentId">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">No appointments found</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        // Cancel appointment button handler
+        $('.cancel-btn').click(function() {
+            var id = $(this).data('id');
+            Swal.fire({
+                title: 'Cancel Appointment',
+                text: "Are you sure you want to cancel this appointment?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, cancel it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('/Appointments/Cancel/' + id, function() {
+                        Swal.fire(
+                            'Cancelled!',
+                            'The appointment has been cancelled.',
+                            'success'
+                        ).then(() => location.reload());
+                    }).fail(function() {
+                        Swal.fire(
+                            'Error!',
+                            'Something went wrong.',
+                            'error'
+                        );
+                    });
+                }
+            });
+        });
+    </script>
+}

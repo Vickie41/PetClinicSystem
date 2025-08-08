@@ -1,101 +1,104 @@
 ﻿@model IEnumerable<PetClinicSystem.Models.Consultation>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Medical Records";
+    ViewData["ActivePage"] = "Consultations";
 }
 
-<h1>Index</h1>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-notes-medical me-2"></i>@ViewData["Title"]
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="input-group" style="max-width: 300px;">
+                <input type="text" class="form-control" placeholder="Search records..." id="searchInput">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.ConsultationDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Weight)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Temperature)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.HeartRate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.RespirationRate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Diagnosis)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Notes)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.FollowUpDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IsFollowUp)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Appointment)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Patient)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Vet)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.ConsultationDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Weight)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Temperature)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.HeartRate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.RespirationRate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Diagnosis)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Notes)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.FollowUpDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IsFollowUp)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Appointment.AppointmentId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Patient.PatientId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Vet.UserId)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.ConsultationId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.ConsultationId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.ConsultationId">Delete</a>
-            </td>
-        </tr>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="consultationsTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>Veterinarian</th>
+                            <th>Diagnosis</th>
+                            <th>Follow Up</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OrderByDescending(c => c.ConsultationDate))
+                        {
+                            <tr>
+                                <td>@item.ConsultationDate?.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(item.Patient?.PhotoPath))
+                                        {
+                                            <img src="@item.Patient.PhotoPath" class="avatar-xs rounded-circle me-2" alt="@item.Patient.Name">
+                                        }
+                                        @item.Patient?.Name
+                                    </div>
+                                </td>
+                                <td>Dr. @item.Vet?.LastName</td>
+                                <td>@(item.Diagnosis ?? "No diagnosis")</td>
+                                <td>
+                                    @if (item.FollowUpDate.HasValue)
+                                    {
+                                        <span class="badge bg-@(item.FollowUpDate < DateTime.Today ? "danger" : "info")">
+                                            @item.FollowUpDate?.ToString("MMM dd")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">None</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a asp-action="Details" asp-route-id="@item.ConsultationId" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@item.ConsultationId" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#consultationsTable').DataTable({
+                responsive: true,
+                order: [[0, 'desc']],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search records...",
+                }
+            });
+
+            // Connect search input to DataTable
+            $('#searchInput').keyup(function(){
+                $('#consultationsTable').DataTable().search($(this).val()).draw();
+            });
+        });
+    </script>
 }
-    </tbody>
-</table>

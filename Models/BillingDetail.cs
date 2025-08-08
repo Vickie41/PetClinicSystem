@@ -22,4 +22,6 @@ public partial class BillingDetail
     public decimal TotalPrice { get; set; }
 
     public virtual Billing Bill { get; set; } = null!;
+
+    public virtual Service Service { get; set; }
 }

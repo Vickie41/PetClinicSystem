@@ -35,6 +35,8 @@ public partial class PetClinicContext : DbContext
 
     public virtual DbSet<Prescription> Prescriptions { get; set; }
 
+    public virtual DbSet<Service> Services { get; set; }
+
     public virtual DbSet<Treatment> Treatments { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -258,6 +260,20 @@ public partial class PetClinicContext : DbContext
                 .HasForeignKey(d => d.ConsultationId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Prescript__Consu__68487DD7");
+        });
+
+        modelBuilder.Entity<Service>(entity =>
+        {
+            entity.HasKey(e => e.ServiceId).HasName("PK__Service__C51BB00A1913ED02");
+
+            entity.ToTable("Service");
+
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.ServiceName).HasMaxLength(200);
         });
 
         modelBuilder.Entity<Treatment>(entity =>

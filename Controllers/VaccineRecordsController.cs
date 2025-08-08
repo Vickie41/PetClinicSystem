@@ -1,31 +1,66 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PetClinicSystem.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace PetClinicSystem.Controllers
 {
     public class VaccineRecordsController : Controller
     {
         private readonly PetClinicContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public VaccineRecordsController(PetClinicContext context)
+        public VaccineRecordsController(PetClinicContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        // GET: VaccineRecords
-        public async Task<IActionResult> Index()
+        // GET: My Pet's Vaccination Records
+        public async Task<IActionResult> Index(int? patientId)
         {
-            var petClinicContext = _context.VaccineRecords.Include(v => v.AdministeredByNavigation).Include(v => v.Patient).Include(v => v.Vaccine);
-            return View(await petClinicContext.ToListAsync());
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+            if (owner == null)
+            {
+                return NotFound("Owner record not found");
+            }
+
+            IQueryable<VaccineRecord> recordsQuery = _context.VaccineRecords
+                .Include(v => v.Patient)
+                .Include(v => v.Vaccine)
+                .Include(v => v.AdministeredByNavigation)
+                .Where(v => v.Patient.OwnerId == owner.OwnerId);
+
+            if (patientId.HasValue)
+            {
+                recordsQuery = recordsQuery.Where(v => v.PatientId == patientId.Value);
+            }
+
+            var records = await recordsQuery
+                .OrderByDescending(v => v.DateGiven)
+                .ToListAsync();
+
+            ViewBag.Pets = await _context.Patients
+                .Where(p => p.OwnerId == owner.OwnerId)
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = p.Name
+                })
+                .ToListAsync();
+
+            return View(records);
         }
 
-        // GET: VaccineRecords/Details/5
+        // GET: Vaccine Record Details
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -33,143 +68,44 @@ namespace PetClinicSystem.Controllers
                 return NotFound();
             }
 
-            var vaccineRecord = await _context.VaccineRecords
-                .Include(v => v.AdministeredByNavigation)
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+            var record = await _context.VaccineRecords
                 .Include(v => v.Patient)
                 .Include(v => v.Vaccine)
-                .FirstOrDefaultAsync(m => m.RecordId == id);
-            if (vaccineRecord == null)
-            {
-                return NotFound();
-            }
-
-            return View(vaccineRecord);
-        }
-
-        // GET: VaccineRecords/Create
-        public IActionResult Create()
-        {
-            ViewData["AdministeredBy"] = new SelectList(_context.Users, "UserId", "UserId");
-            ViewData["PatientId"] = new SelectList(_context.Patients, "PatientId", "PatientId");
-            ViewData["VaccineId"] = new SelectList(_context.Vaccinations, "VaccineId", "VaccineId");
-            return View();
-        }
-
-        // POST: VaccineRecords/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("RecordId,VaccineId,PatientId,AdministeredBy,DateGiven,NextDueDate,LotNumber,Notes")] VaccineRecord vaccineRecord)
-        {
-            if (ModelState.IsValid)
-            {
-                _context.Add(vaccineRecord);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["AdministeredBy"] = new SelectList(_context.Users, "UserId", "UserId", vaccineRecord.AdministeredBy);
-            ViewData["PatientId"] = new SelectList(_context.Patients, "PatientId", "PatientId", vaccineRecord.PatientId);
-            ViewData["VaccineId"] = new SelectList(_context.Vaccinations, "VaccineId", "VaccineId", vaccineRecord.VaccineId);
-            return View(vaccineRecord);
-        }
-
-        // GET: VaccineRecords/Edit/5
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var vaccineRecord = await _context.VaccineRecords.FindAsync(id);
-            if (vaccineRecord == null)
-            {
-                return NotFound();
-            }
-            ViewData["AdministeredBy"] = new SelectList(_context.Users, "UserId", "UserId", vaccineRecord.AdministeredBy);
-            ViewData["PatientId"] = new SelectList(_context.Patients, "PatientId", "PatientId", vaccineRecord.PatientId);
-            ViewData["VaccineId"] = new SelectList(_context.Vaccinations, "VaccineId", "VaccineId", vaccineRecord.VaccineId);
-            return View(vaccineRecord);
-        }
-
-        // POST: VaccineRecords/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("RecordId,VaccineId,PatientId,AdministeredBy,DateGiven,NextDueDate,LotNumber,Notes")] VaccineRecord vaccineRecord)
-        {
-            if (id != vaccineRecord.RecordId)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(vaccineRecord);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!VaccineRecordExists(vaccineRecord.RecordId))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["AdministeredBy"] = new SelectList(_context.Users, "UserId", "UserId", vaccineRecord.AdministeredBy);
-            ViewData["PatientId"] = new SelectList(_context.Patients, "PatientId", "PatientId", vaccineRecord.PatientId);
-            ViewData["VaccineId"] = new SelectList(_context.Vaccinations, "VaccineId", "VaccineId", vaccineRecord.VaccineId);
-            return View(vaccineRecord);
-        }
-
-        // GET: VaccineRecords/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var vaccineRecord = await _context.VaccineRecords
                 .Include(v => v.AdministeredByNavigation)
+                .FirstOrDefaultAsync(v => v.RecordId == id && v.Patient.OwnerId == owner.OwnerId);
+
+            if (record == null)
+            {
+                return NotFound();
+            }
+
+            return View(record);
+        }
+
+        // GET: Upcoming Vaccinations
+        public async Task<IActionResult> Upcoming()
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+            if (owner == null)
+            {
+                return NotFound("Owner record not found");
+            }
+
+            var upcomingVaccines = await _context.VaccineRecords
                 .Include(v => v.Patient)
                 .Include(v => v.Vaccine)
-                .FirstOrDefaultAsync(m => m.RecordId == id);
-            if (vaccineRecord == null)
-            {
-                return NotFound();
-            }
+                .Where(v => v.Patient.OwnerId == owner.OwnerId &&
+                           v.NextDueDate.HasValue &&
+                           v.NextDueDate >= DateOnly.FromDateTime(DateTime.Today))
+                .OrderBy(v => v.NextDueDate)
+                .ToListAsync();
 
-            return View(vaccineRecord);
-        }
-
-        // POST: VaccineRecords/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var vaccineRecord = await _context.VaccineRecords.FindAsync(id);
-            if (vaccineRecord != null)
-            {
-                _context.VaccineRecords.Remove(vaccineRecord);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
-        private bool VaccineRecordExists(int id)
-        {
-            return _context.VaccineRecords.Any(e => e.RecordId == id);
+            return View(upcomingVaccines);
         }
     }
 }

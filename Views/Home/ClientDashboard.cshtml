@@ -3,6 +3,7 @@
     ViewData["Title"] = "Client Dashboard";
     Layout = "~/Views/Shared/_Layout.cshtml";
 
+
     // Safely handle null model properties
     var pets = Model?.MyPets ?? new List<Patient>();
     var appointments = Model?.UpcomingAppointments ?? new List<Appointment>();

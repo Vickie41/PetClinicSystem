@@ -6,26 +6,44 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PetClinicSystem.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
+
 
 namespace PetClinicSystem.Controllers
 {
     public class PatientsController : Controller
     {
         private readonly PetClinicContext _context;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public PatientsController(PetClinicContext context)
+        public PatientsController(PetClinicContext context, UserManager<IdentityUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        // GET: Patients
+        // GET: My Pets
         public async Task<IActionResult> Index()
         {
-            var petClinicContext = _context.Patients.Include(p => p.Owner);
-            return View(await petClinicContext.ToListAsync());
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+            if (owner == null)
+            {
+                return NotFound("Owner record not found");
+            }
+
+            var patients = await _context.Patients
+                .Where(p => p.OwnerId == owner.OwnerId)
+                .OrderBy(p => p.Name)
+                .ToListAsync();
+
+            return View(patients);
         }
 
-        // GET: Patients/Details/5
+        // GET: Pet Details
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
@@ -33,9 +51,19 @@ namespace PetClinicSystem.Controllers
                 return NotFound();
             }
 
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
             var patient = await _context.Patients
                 .Include(p => p.Owner)
-                .FirstOrDefaultAsync(m => m.PatientId == id);
+                .Include(p => p.Appointments)
+                    .ThenInclude(a => a.Vet)
+                .Include(p => p.Consultations)
+                    .ThenInclude(c => c.Vet)
+                .Include(p => p.VaccineRecords)
+                    .ThenInclude(v => v.Vaccine)
+                .FirstOrDefaultAsync(p => p.PatientId == id && p.OwnerId == owner.OwnerId);
+
             if (patient == null)
             {
                 return NotFound();
@@ -44,31 +72,59 @@ namespace PetClinicSystem.Controllers
             return View(patient);
         }
 
-        // GET: Patients/Create
+        // GET: Register New Pet
         public IActionResult Create()
         {
-            ViewData["OwnerId"] = new SelectList(_context.Owners, "OwnerId", "OwnerId");
-            return View();
+            return View(new PatientViewModel());
         }
 
-        // POST: Patients/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: Register New Pet
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("PatientId,OwnerId,Name,Species,Breed,DateOfBirth,Gender,Color,MicrochipId,Allergies,MedicalNotes,PhotoPath,IsActive,CreatedDate")] Patient patient)
+        public async Task<IActionResult> Create(PatientViewModel model)
         {
             if (ModelState.IsValid)
             {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+                if (owner == null)
+                {
+                    // Create owner record if it doesn't exist
+                    owner = new Owner
+                    {
+                        UserId = userId,
+                        FirstName = User.Identity.Name.Split(' ')[0],
+                        LastName = User.Identity.Name.Split(' ').Length > 1 ? User.Identity.Name.Split(' ')[1] : "",
+                        Email = User.Identity.Name,
+                        Phone = ""
+                    };
+                    _context.Add(owner);
+                    await _context.SaveChangesAsync();
+                }
+
+                var patient = new Patient
+                {
+                    OwnerId = owner.OwnerId,
+                    Name = model.Name,
+                    Species = model.Species,
+                    Breed = model.Breed,
+                    DateOfBirth = model.DateOfBirth,
+                    Gender = model.Gender,
+                    Color = model.Color,
+                    MicrochipId = model.MicrochipId,
+                    CreatedDate = DateTime.Now,
+                    IsActive = true
+                };
+
                 _context.Add(patient);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["OwnerId"] = new SelectList(_context.Owners, "OwnerId", "OwnerId", patient.OwnerId);
-            return View(patient);
+            return View(model);
         }
 
-        // GET: Patients/Edit/5
+        // GET: Edit Pet Details
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -76,29 +132,63 @@ namespace PetClinicSystem.Controllers
                 return NotFound();
             }
 
-            var patient = await _context.Patients.FindAsync(id);
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+            var patient = await _context.Patients
+                .FirstOrDefaultAsync(p => p.PatientId == id && p.OwnerId == owner.OwnerId);
+
             if (patient == null)
             {
                 return NotFound();
             }
-            ViewData["OwnerId"] = new SelectList(_context.Owners, "OwnerId", "OwnerId", patient.OwnerId);
-            return View(patient);
+
+            var model = new PatientViewModel
+            {
+                PatientId = patient.PatientId,
+                Name = patient.Name,
+                Species = patient.Species,
+                Breed = patient.Breed,
+                DateOfBirth = (DateOnly)patient.DateOfBirth,
+                Gender = patient.Gender,
+                Color = patient.Color,
+                MicrochipId = patient.MicrochipId
+            };
+
+            return View(model);
         }
 
-        // POST: Patients/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: Edit Pet Details
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("PatientId,OwnerId,Name,Species,Breed,DateOfBirth,Gender,Color,MicrochipId,Allergies,MedicalNotes,PhotoPath,IsActive,CreatedDate")] Patient patient)
+        public async Task<IActionResult> Edit(int id, PatientViewModel model)
         {
-            if (id != patient.PatientId)
+            if (id != model.PatientId)
             {
                 return NotFound();
             }
 
             if (ModelState.IsValid)
             {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PatientId == id && p.OwnerId == owner.OwnerId);
+
+                if (patient == null)
+                {
+                    return NotFound();
+                }
+
+                patient.Name = model.Name;
+                patient.Species = model.Species;
+                patient.Breed = model.Breed;
+                patient.DateOfBirth = model.DateOfBirth;
+                patient.Gender = model.Gender;
+                patient.Color = model.Color;
+                patient.MicrochipId = model.MicrochipId;
+
                 try
                 {
                     _context.Update(patient);
@@ -117,42 +207,7 @@ namespace PetClinicSystem.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["OwnerId"] = new SelectList(_context.Owners, "OwnerId", "OwnerId", patient.OwnerId);
-            return View(patient);
-        }
-
-        // GET: Patients/Delete/5
-        public async Task<IActionResult> Delete(int? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var patient = await _context.Patients
-                .Include(p => p.Owner)
-                .FirstOrDefaultAsync(m => m.PatientId == id);
-            if (patient == null)
-            {
-                return NotFound();
-            }
-
-            return View(patient);
-        }
-
-        // POST: Patients/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var patient = await _context.Patients.FindAsync(id);
-            if (patient != null)
-            {
-                _context.Patients.Remove(patient);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            return View(model);
         }
 
         private bool PatientExists(int id)
