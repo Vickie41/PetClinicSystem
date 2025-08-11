@@ -1,0 +1,198 @@
+﻿@model PetClinicSystem.Models.Billing
+
+@{
+    Layout = null;
+    ViewData["Title"] = "Invoice #" + Model.BillId;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewData["Title"] - Pet Clinic System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: white;
+            color: #333;
+        }
+        .invoice-header {
+            border-bottom: 2px solid #dee2e6;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .invoice-details {
+            font-size: 14px;
+        }
+        .table th {
+            border-top: none;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .total-row {
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #dee2e6;
+            font-size: 12px;
+            text-align: center;
+        }
+        .status-badge {
+            font-size: 14px;
+            padding: 5px 10px;
+        }
+        .text-danger {
+            color: #dc3545 !important;
+        }
+        .text-success {
+            color: #28a745 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row invoice-header">
+            <div class="col-md-6">
+                <h1 class="invoice-title">Pet Clinic System</h1>
+                <p class="mb-0">123 Veterinary Street</p>
+                <p class="mb-0">Anytown, AN 12345</p>
+                <p class="mb-0">Phone: (123) 456-7890</p>
+                <p class="mb-0">Email: info@petclinic.com</p>
+            </div>
+            <div class="col-md-6 text-end">
+                <h2 class="invoice-title">INVOICE</h2>
+                <div class="invoice-details">
+                    <p class="mb-1"><strong>Invoice #:</strong> @Model.BillId</p>
+                    <p class="mb-1"><strong>Date:</strong> @Model.BillDate?.ToString("MMMM dd, yyyy")</p>
+                    <p class="mb-1"><strong>Due Date:</strong> @Model.DueDate?.ToString("MMMM dd, yyyy")</p>
+                    <p class="mb-1">
+                        <strong>Status:</strong>
+                        @if (Model.Balance <= 0)
+                        {
+                            <span class="badge bg-success status-badge">Paid</span>
+                        }
+                        else if (Model.DueDate < DateTime.Today)
+                        {
+                            <span class="badge bg-danger status-badge">Overdue</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning status-badge">Pending</span>
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5>Bill To:</h5>
+                <p class="mb-1"><strong>@Model.Consultation?.Patient?.Owner?.FirstName ?? Model.Appointment?.Patient?.Owner?.FirstName @Model.Consultation?.Patient?.Owner?.LastName ?? Model.Appointment?.Patient?.Owner?.LastName</strong></p>
+                <p class="mb-1">@Model.Consultation?.Patient?.Owner?.Address ?? Model.Appointment?.Patient?.Owner?.Address</p>
+                <p class="mb-1">@Model.Consultation?.Patient?.Owner?.Phone ?? Model.Appointment?.Patient?.Owner?.PhoneNumber</p>
+                <p class="mb-1">@Model.Consultation?.Patient?.Owner?.Email ?? Model.Appointment?.Patient?.Owner?.Email</p>
+            </div>
+            <div class="col-md-6">
+                <h5>Patient:</h5>
+                <p class="mb-1"><strong>@Model.Consultation?.Patient?.Name ?? Model.Appointment?.Patient?.Name</strong></p>
+                <p class="mb-1">@Model.Consultation?.Patient?.Species ?? Model.Appointment?.Patient?.Species | @Model.Consultation?.Patient?.Breed ?? Model.Appointment?.Patient?.Breed</p>
+                <p class="mb-1">@(Model.Consultation?.Patient?.DateOfBirth?.ToString("MMMM dd, yyyy") ?? Model.Appointment?.Patient?.DateOfBirth?.ToString("MMMM dd, yyyy") ?? "DOB Unknown")</p>
+            </div>
+        </div>
+
+        <div class="table-responsive mb-4">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Description</th>
+                        <th class="text-end">Qty</th>
+                        <th class="text-end">Unit Price</th>
+                        <th class="text-end">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.BillingDetails)
+                    {
+                        <tr>
+                            <td>@item.ItemType</td>
+                            <td>@item.Description</td>
+                            <td class="text-end">@(item.Quantity?.ToString() ?? "1")</td>
+                            <td class="text-end">@item.UnitPrice.ToString("C")</td>
+                            <td class="text-end">@item.TotalPrice.ToString("C")</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="4" class="text-end">Subtotal:</td>
+                        <td class="text-end">@Model.TotalAmount.ToString("C")</td>
+                    </tr>
+                    @if (Model.PaidAmount.HasValue && Model.PaidAmount > 0)
+                    {
+                        <tr class="total-row">
+                            <td colspan="4" class="text-end">Paid Amount:</td>
+                            <td class="text-end text-success">-@Model.PaidAmount?.ToString("C")</td>
+                        </tr>
+                    }
+                    <tr class="total-row">
+                        <td colspan="4" class="text-end">Balance Due:</td>
+                        <td class="text-end @(Model.Balance > 0 ? "text-danger" : "text-success")">
+                            @Model.Balance?.ToString("C")
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5>Service Details:</h5>
+@if (Model.Consultation != null)
+{
+                    <p class="mb-1"><strong>Consultation Date:</strong> @Model.Consultation.ConsultationDate?.ToString("MMMM dd, yyyy")</p>
+                    <p class="mb-1"><strong>Veterinarian:</strong> Dr. @Model.Consultation.Vet?.LastName</p>
+                    <p class="mb-1"><strong>Diagnosis:</strong> @(string.IsNullOrEmpty(Model.Consultation.Diagnosis) ? "None" : Model.Consultation.Diagnosis)</p>
+}
+else if (Model.Appointment != null)
+{
+                    <p class="mb-1"><strong>Appointment Date:</strong> @Model.Appointment.AppointmentDate.ToString("MMMM dd, yyyy")</p>
+                    <p class="mb-1"><strong>Veterinarian:</strong> Dr. @Model.Appointment.Vet?.LastName</p>
+                    <p class="mb-1"><strong>Reason:</strong> @Model.Appointment.Reason</p>
+}
+            </div>
+            <div class="col-md-6">
+                <h5>Payment Instructions:</h5>
+                <p class="mb-1">Please make checks payable to <strong>Pet Clinic System</strong></p>
+                <p class="mb-1">For credit card payments, please call (123) 456-7890</p>
+                <p class="mb-1">Bank Transfer: Account #123456789, Routing #987654321</p>
+                <p class="mb-1">Late payments may be subject to a 1.5% monthly service charge</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p class="mb-1">Thank you for choosing Pet Clinic System for your pet's care!</p>
+            <p class="mb-1">Questions about this invoice? Call (123) 456-7890 or email billing@petclinic.com</p>
+            <p class="mb-0">Invoice generated on @DateTime.Now.ToString("MMMM dd, yyyy h:mm tt")</p>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</body>
+</html>

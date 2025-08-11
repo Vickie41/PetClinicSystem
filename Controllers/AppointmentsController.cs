@@ -17,13 +17,13 @@ namespace PetClinicSystem.Controllers
     public class AppointmentsController : Controller
     {
         private readonly PetClinicContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        //private readonly UserManager<IdentityUser> _userManager;
 
 
-        public AppointmentsController(PetClinicContext context, UserManager<IdentityUser> userManager)
+        public AppointmentsController(PetClinicContext context) /*UserManager<IdentityUser> userManager*/
         {
             _context = context;
-            _userManager = userManager;
+            //_userManager = userManager;
         }
 
         // GET: My Appointments

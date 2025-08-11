@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace PetClinicSystem.Models;
 
 public partial class Patient
 {
+
     public int PatientId { get; set; }
 
     public int OwnerId { get; set; }

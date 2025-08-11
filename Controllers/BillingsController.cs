@@ -14,13 +14,13 @@ namespace PetClinicSystem.Controllers
     public class BillingsController : Controller
     {
         private readonly PetClinicContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        //private readonly UserManager<IdentityUser> _userManager;
 
 
-        public BillingsController(PetClinicContext context, UserManager<IdentityUser> userManager)
+        public BillingsController(PetClinicContext context) /*, UserManager<IdentityUser> userManager)*/
         {
             _context = context;
-            _userManager = userManager;
+            //_userManager = userManager;
         }
 
         // GET: My Invoices

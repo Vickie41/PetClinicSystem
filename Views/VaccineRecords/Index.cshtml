@@ -1,71 +1,138 @@
 ﻿@model IEnumerable<PetClinicSystem.Models.VaccineRecord>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Vaccination Records";
+    ViewData["ActivePage"] = "VaccineRecords";
 }
 
-<h1>Index</h1>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-syringe me-2"></i>@ViewData["Title"]
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    Filter: <span id="filterText">All</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item filter-item" href="#" data-filter="all">All Records</a></li>
+                    <li><a class="dropdown-item filter-item" href="#" data-filter="upcoming">Upcoming</a></li>
+                    <li><a class="dropdown-item filter-item" href="#" data-filter="overdue">Overdue</a></li>
+                    <li><a class="dropdown-item filter-item" href="#" data-filter="completed">Completed</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.DateGiven)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.NextDueDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.LotNumber)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Notes)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.AdministeredByNavigation)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Patient)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Vaccine)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.DateGiven)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.NextDueDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.LotNumber)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Notes)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.AdministeredByNavigation.UserId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Patient.PatientId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Vaccine.VaccineId)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.RecordId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.RecordId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.RecordId">Delete</a>
-            </td>
-        </tr>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="vaccinesTable">
+                    <thead>
+                        <tr>
+                            <th>Vaccine</th>
+                            <th>Patient</th>
+                            <th>Date Given</th>
+                            <th>Next Due</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in Model.OrderByDescending(v => v.DateGiven))
+                    {
+                        
+                            var isUpcoming = item.NextDueDate.HasValue &&
+                                item.NextDueDate.Value.ToDateTime(TimeOnly.MinValue) > DateTime.Today &&
+                                item.NextDueDate.Value.ToDateTime(TimeOnly.MinValue) <= DateTime.Today.AddDays(30);
+                            var isOverdue = item.NextDueDate.HasValue &&
+                                item.NextDueDate.Value.ToDateTime(TimeOnly.MinValue) < DateTime.Today;
+                        
+
+                        <tr data-status="@(isUpcoming ? "upcoming" : isOverdue ? "overdue" : "completed")">
+                            <td>@item.Vaccine?.Name</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    @if (!string.IsNullOrEmpty(item.Patient?.PhotoPath))
+                                    {
+                                        <img src="@item.Patient.PhotoPath" class="avatar-xs rounded-circle me-2" alt="@item.Patient.Name" />
+                                    }
+                                    @item.Patient?.Name
+                                </div>
+                            </td>
+                            <td>@item.DateGiven.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                @if (item.NextDueDate.HasValue)
+                                {
+                                    <span>@item.NextDueDate?.ToString("MMM dd, yyyy")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">N/A</span>
+                                }
+                            </td>
+                            <td>
+                                @if (isUpcoming)
+                                {
+                                    <span class="badge bg-info">Upcoming</span>
+                                }
+                                else if (isOverdue)
+                                {
+                                    <span class="badge bg-danger">Overdue</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success">Completed</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a asp-action="Details" asp-route-id="@item.RecordId" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.RecordId" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#vaccinesTable').DataTable({
+                responsive: true,
+                order: [[2, 'desc']],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search records...",
+                }
+            });
+
+            // Filter functionality
+            $('.filter-item').click(function(e) {
+                e.preventDefault();
+                var filter = $(this).data('filter');
+                $('#filterText').text($(this).text());
+
+                if (filter === 'all') {
+                    $('#vaccinesTable tbody tr').show();
+                } else {
+                    $('#vaccinesTable tbody tr').hide();
+                    $('#vaccinesTable tbody tr[data-status="' + filter + '"]').show();
+                }
+            });
+        });
+    </script>
 }
-    </tbody>
-</table>

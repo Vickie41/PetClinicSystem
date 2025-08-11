@@ -15,13 +15,13 @@ namespace PetClinicSystem.Controllers
     public class PrescriptionsController : Controller
     {
         private readonly PetClinicContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        //private readonly UserManager<IdentityUser> _userManager;
 
 
-        public PrescriptionsController(PetClinicContext context, UserManager<IdentityUser> userManager)
+        public PrescriptionsController(PetClinicContext context) /*, UserManager<IdentityUser> userManager)*/
         {
             _context = context;
-            _userManager = userManager;
+            //_userManager = userManager;
         }
 
         // GET: My Pet's Prescriptions

@@ -14,12 +14,12 @@ namespace PetClinicSystem.Controllers
     public class VaccineRecordsController : Controller
     {
         private readonly PetClinicContext _context;
-        private readonly UserManager<IdentityUser> _userManager;
+        //private readonly UserManager<IdentityUser> _userManager;
 
-        public VaccineRecordsController(PetClinicContext context, UserManager<IdentityUser> userManager)
+        public VaccineRecordsController(PetClinicContext context) /*UserManager<IdentityUser> userManager)*/
         {
             _context = context;
-            _userManager = userManager;
+            //_userManager = userManager;
         }
 
         // GET: My Pet's Vaccination Records

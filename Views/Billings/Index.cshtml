@@ -1,83 +1,126 @@
 ﻿@model IEnumerable<PetClinicSystem.Models.Billing>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Billing & Payments";
+    ViewData["ActivePage"] = "Billings";
 }
 
-<h1>Index</h1>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-receipt me-2"></i>@ViewData["Title"]
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                    Filter: <span id="filterText">All</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item filter-item" href="#" data-filter="all">All Invoices</a></li>
+                    <li><a class="dropdown-item filter-item" href="#" data-filter="paid">Paid</a></li>
+                    <li><a class="dropdown-item filter-item" href="#" data-filter="pending">Pending</a></li>
+                    <li><a class="dropdown-item filter-item" href="#" data-filter="overdue">Overdue</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.TotalAmount)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.PaidAmount)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Balance)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.BillDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.DueDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Status)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Notes)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Appointment)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Consultation)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.TotalAmount)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.PaidAmount)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Balance)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.BillDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.DueDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Status)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Notes)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Appointment.AppointmentId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Consultation.ConsultationId)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.BillId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.BillId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.BillId">Delete</a>
-            </td>
-        </tr>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="billingsTable">
+                    <thead>
+                        <tr>
+                            <th>Invoice #</th>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>Service</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                     @foreach (var item in Model.OrderByDescending(b => b.BillDate))
+                        {
+    
+                                var isOverdue = item.DueDate.HasValue && item.DueDate < DateTime.Today && item.Balance > 0;
+   
+
+                            <tr data-status="@(item.Balance <= 0 ? "paid" : isOverdue ? "overdue" : "pending")">
+                                <td>@item.BillId</td>
+                                <td>@item.BillDate?.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(item.Consultation?.Patient?.PhotoPath))
+                                        {
+                                            <img src="@item.Consultation.Patient.PhotoPath" class="avatar-xs rounded-circle me-2" alt="@item.Consultation.Patient.Name" />
+                                        }
+                                        @item.Consultation?.Patient?.Name
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.Consultation != null)
+                                    {
+                                        <span>Consultation</span>
+                                    }
+                                    else if (item.Appointment != null)
+                                    {
+                                        <span>Appointment</span>
+                                    }
+                                </td>
+                                <td>@item.TotalAmount.ToString("C")</td>
+                                <td>
+                                    @if (item.Balance <= 0)
+                                    {
+                                        <span class="badge bg-success">Paid</span>
+                                    }
+                                    else if (isOverdue)
+                                    {
+                                        <span class="badge bg-danger">Overdue</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">Pending</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#billingsTable').DataTable({
+                responsive: true,
+                order: [[1, 'desc']],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search invoices...",
+                }
+            });
+
+            // Filter functionality
+            $('.filter-item').click(function(e) {
+                e.preventDefault();
+                var filter = $(this).data('filter');
+                $('#filterText').text($(this).text());
+
+                if (filter === 'all') {
+                    $('#billingsTable tbody tr').show();
+                } else {
+                    $('#billingsTable tbody tr').hide();
+                    $('#billingsTable tbody tr[data-status="' + filter + '"]').show();
+                }
+            });
+        });
+    </script>
 }
-    </tbody>
-</table>

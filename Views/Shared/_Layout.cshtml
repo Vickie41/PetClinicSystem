@@ -221,20 +221,20 @@
                                 @if (User.IsInRole("Admin") || User.IsInRole("Staff") || User.IsInRole("Veterinarian"))
                                 {
                                     <li>
-                                        <a href="/Appointments/Schedule" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Schedule" ? "active" : "")">
+                                        <a asp-controller="Appointments" asp-action="Schedule" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Schedule" ? "active" : "")">
                                             <i class="fas fa-plus-circle"></i>
                                             Schedule New
                                         </a>
                                     </li>
                                 }
                                 <li>
-                                    <a href="/Appointments/Calendar" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Calendar" ? "active" : "")">
+                                    <a asp-controller="Appointments" asp-action="Calendar" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Calendar" ? "active" : "")">
                                         <i class="fas fa-calendar-alt"></i>
                                         Calendar View
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/Appointments" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
+                                    <a asp-controller="Appointments" asp-action="Index" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" ? "active" : "")">
                                         <i class="fas fa-list"></i>
                                         @(User.IsInRole("Client") ? "My Appointments" : "Manage Appointments")
                                     </a>
@@ -254,25 +254,25 @@
                             </a>
                             <ul class="collapse list-unstyled @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Patients" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Owners" ? "show" : "")" id="patientSubmenu">
                                 <li>
-                                    <a href="/Patients/Create" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Create" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Patients" ? "active" : "")">
+                                    <a asp-controller="Patients" asp-action="Create" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Create" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Patients" ? "active" : "")">
                                         <i class="fas fa-plus-circle"></i>
                                         Register Patient
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/Patients" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Patients" ? "active" : "")">
+                                    <a asp-controller="Patients"  class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Patients" ? "active" : "")">
                                         <i class="fas fa-list"></i>
                                         Patient List
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/Owners/Create" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Create" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Owners" ? "active" : "")">
+                                    <a asp-controller="Owners" asp-action="Create" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Create" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Owners" ? "active" : "")">
                                         <i class="fas fa-user-plus"></i>
                                         Register Owner
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/Owners" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Owners" ? "active" : "")">
+                                    <a asp-controller="Owners"  class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Owners" ? "active" : "")">
                                         <i class="fas fa-users"></i>
                                         Owner List
                                     </a>
@@ -283,7 +283,7 @@
                     else if (User.IsInRole("Client"))
                     {
                         <li>
-                            <a href="/Patients" class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Patients" ? "active" : "")">
+                            <a asp-controller="Patients" asp-action="Index" class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Patients" ? "active" : "")">
                                 <i class="fas fa-paw"></i>
                                 <span>My Pets</span>
                             </a>
@@ -301,31 +301,31 @@
                             </a>
                             <ul class="collapse list-unstyled @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Consultations" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Treatments" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Prescriptions" || ViewContext.RouteData.Values["Controller"]?.ToString() == "Vaccinations" || ViewContext.RouteData.Values["Controller"]?.ToString() == "DiagnosticTests" ? "show" : "")" id="medicalSubmenu">
                                 <li>
-                                    <a href="/Consultations" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Consultations" ? "active" : "")">
+                                    <a asp-controller="Consultations" asp-action="Index" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Consultations" ? "active" : "")">
                                         <i class="fas fa-stethoscope"></i>
                                         Consultations
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/Treatments" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Treatments" ? "active" : "")">
+                                    <a asp-controller="Treatments" asp-action="Index" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Treatments" ? "active" : "")">
                                         <i class="fas fa-heartbeat"></i>
                                         Treatments
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/Prescriptions" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Prescriptions" ? "active" : "")">
+                                    <a asp-controller="Prescriptions" asp-action="Index" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Prescriptions" ? "active" : "")">
                                         <i class="fas fa-prescription-bottle-alt"></i>
                                         Prescriptions
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/Vaccinations" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Vaccinations" ? "active" : "")">
+                                    <a asp-controller="Vaccinations" asp-action="Index" asp-action="Create" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Vaccinations" ? "active" : "")">
                                         <i class="fas fa-syringe"></i>
                                         Vaccinations
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/DiagnosticTests" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "DiagnosticTests" ? "active" : "")">
+                                    <a asp-controller="DiagnosticTests" asp-action="Index" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "DiagnosticTests" ? "active" : "")">
                                         <i class="fas fa-microscope"></i>
                                         Diagnostic Tests
                                     </a>
@@ -345,19 +345,19 @@
                             </a>
                             <ul class="collapse list-unstyled @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" || ViewContext.RouteData.Values["Controller"]?.ToString() == "BillingDetails" ? "show" : "")" id="billingSubmenu">
                                 <li>
-                                    <a href="/Billing" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
+                                    <a asp-controller="Billings" asp-action="Index" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
                                         <i class="fas fa-list"></i>
                                         Invoices
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/Billing/Create" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Create" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
+                                    <a asp-controller="Billings" asp-action="Create" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Create" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
                                         <i class="fas fa-plus-circle"></i>
                                         Create Invoice
                                     </a>
                                 </li>
                                 <li>
-                                    <a href="/Billing/Payments" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Payments" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
+                                    <a asp-controller="Billings" asp-action="Payment" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Payments" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
                                         <i class="fas fa-money-bill-wave"></i>
                                         Payment Records
                                     </a>
@@ -368,7 +368,7 @@
                     else if (User.IsInRole("Client"))
                     {
                         <li>
-                            <a href="/Billing" class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
+                            <a asp-controller="Billings"  class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
                                 <i class="fas fa-file-invoice-dollar"></i>
                                 <span>My Invoices</span>
                             </a>
