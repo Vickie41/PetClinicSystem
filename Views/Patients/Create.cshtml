@@ -1,28 +1,23 @@
-﻿@model PetClinicSystem.Models.Patient
-
+﻿@model PetClinicSystem.Models.PatientViewModel
 @{
-    ViewData["Title"] = (ViewData["Action"] as string) + " Pet";
+    var action = ViewData["Action"]?.ToString() ?? "Create";
+    ViewData["Title"] = action + " Pet";
     ViewData["ActivePage"] = "Patients";
 }
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <h2 class="page-title">
-                <i class="fas fa-paw me-2"></i>@ViewData["Title"]
-            </h2>
-        </div>
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
+}
 
+<div class="container-fluid">
     <div class="card shadow-sm">
         <div class="card-body">
-            <form asp-action="@ViewData["Action"]" enctype="multipart/form-data">
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-
-                @if (ViewData["Action"].ToString() == "Edit")
-                {
-                    <input type="hidden" asp-for="PatientId" />
-                }
+            <form asp-action="@action" method="post" enctype="multipart/form-data" id="patientForm">
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
 
                 <input type="hidden" asp-for="OwnerId" />
 
@@ -59,6 +54,12 @@
                             <input asp-for="DateOfBirth" type="date" class="form-control" />
                             <span asp-validation-for="DateOfBirth" class="text-danger"></span>
                         </div>
+
+                       @*  <div class="mb-3">
+                            <label asp-for="LastVisitDate" class="form-label"></label>
+                            <textarea asp-for="LastVisitDate" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="LastVisitDate" class="text-danger"></span>
+                        </div> *@
                     </div>
 
                     <div class="col-md-4">
@@ -86,16 +87,24 @@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="PhotoPath" class="form-label">Pet Photo</label>
-                            <input asp-for="PhotoPath" type="file" class="form-control" accept="image/*" />
-                            <span asp-validation-for="PhotoPath" class="text-danger"></span>
-                            @if (ViewData["Action"].ToString() == "Edit" && !string.IsNullOrEmpty(Model.PhotoPath))
-                            {
-                                <div class="mt-2">
-                                    <img src="@Model.PhotoPath" class="img-thumbnail" width="100" />
-                                </div>
-                            }
+                            <label asp-for="PhotoFile" class="form-label">Pet Photo</label>
+                            <input asp-for="PhotoFile" type="file" class="form-control" accept="image/*" id="photoUpload" />
+                            <span asp-validation-for="PhotoFile" class="text-danger"></span>
+                            <small class="text-muted">(Optional)</small>
+                            <div class="mt-2" id="imagePreviewContainer">
+                                @if (!string.IsNullOrEmpty(Model.PhotoPath))
+                                {
+                                    <img src="@Model.PhotoPath" class="img-thumbnail" width="100" id="currentPhoto" />
+                                }
+                            </div>
                         </div>
+
+                        @* <div class="mb-3">
+                            <label asp-for="LastVisitDiagnosis" class="form-label"></label>
+                            <textarea asp-for="LastVisitDiagnosis" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="LastVisitDiagnosis" class="text-danger"></span>
+                        </div> *@
+
                     </div>
 
                     <div class="col-md-4">
@@ -110,6 +119,12 @@
                             <textarea asp-for="MedicalNotes" class="form-control" rows="3"></textarea>
                             <span asp-validation-for="MedicalNotes" class="text-danger"></span>
                         </div>
+
+                        
+
+
+                        
+
                     </div>
                 </div>
 
@@ -130,4 +145,36 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        $(document).ready(function() {
+            // Preview image before upload
+            $('#photoUpload').change(function() {
+                if (this.files && this.files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        if ($('#currentPhoto').length) {
+                            $('#currentPhoto').attr('src', e.target.result);
+                        } else {
+                            $('#imagePreviewContainer').html(
+                                `<img src="${e.target.result}" class="img-thumbnail" width="100" id="currentPhoto" />`
+                            );
+                        }
+                    }
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+
+            // Format date inputs
+            $('input[type="date"]').each(function() {
+                if (this.value) {
+                    this.value = this.value.split('T')[0];
+                }
+            });
+
+            // Auto-hide success message after 5 seconds
+            setTimeout(function() {
+                $('.alert-success').fadeOut();
+            }, 5000);
+        });
+    </script>
 }

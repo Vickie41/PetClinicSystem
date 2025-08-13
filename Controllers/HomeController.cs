@@ -21,6 +21,32 @@ namespace PetClinicSystem.Controllers
             _context = context;
         }
 
+
+        // In your HomeController or DashboardController
+        [Authorize]
+        public IActionResult Dashboard()
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("AdminDashboard");
+            }
+            else if (User.IsInRole("Veterinarian"))
+            {
+                return RedirectToAction("VetDashboard");
+            }
+            else if (User.IsInRole("Staff"))
+            {
+                return RedirectToAction("StaffDashboard");
+            }
+            else if (User.IsInRole("Client"))
+            {
+                return RedirectToAction("ClientDashboard");
+            }
+
+            // Default fallback
+            return RedirectToAction("Index", "Home");
+        }
+
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminDashboard()
         {

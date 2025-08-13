@@ -54,11 +54,14 @@
                                 <td>@item.BillDate?.ToString("MMM dd, yyyy")</td>
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        @if (!string.IsNullOrEmpty(item.Consultation?.Patient?.PhotoPath))
-                                        {
-                                            <img src="@item.Consultation.Patient.PhotoPath" class="avatar-xs rounded-circle me-2" alt="@item.Consultation.Patient.Name" />
+                                        @{
+                                            var patient = item.Consultation?.Patient ?? item.Appointment?.Patient;
+                                            if (!string.IsNullOrEmpty(patient?.PhotoPath))
+                                            {
+                                                <img src="@patient.PhotoPath" class="avatar-xs rounded-circle me-2" alt="@patient.Name" />
+                                            }
+                                            @patient?.Name
                                         }
-                                        @item.Consultation?.Patient?.Name
                                     </div>
                                 </td>
                                 <td>

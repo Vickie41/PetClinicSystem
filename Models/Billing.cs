@@ -31,5 +31,7 @@ public partial class Billing
 
     public virtual Consultation? Consultation { get; set; }
     public virtual Patient Patient { get; set; }
+    public int PatientId { get; set; }  
+
 
 }

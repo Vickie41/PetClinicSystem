@@ -42,4 +42,6 @@ public partial class Patient
     public virtual Owner Owner { get; set; } = null!;
 
     public virtual ICollection<VaccineRecord> VaccineRecords { get; set; } = new List<VaccineRecord>();
+
+    
 }

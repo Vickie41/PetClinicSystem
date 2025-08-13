@@ -28,7 +28,7 @@
                         <div class="d-flex align-items-center">
                             @if (!string.IsNullOrEmpty(item.Patient?.PhotoPath))
                             {
-                                <img src="@item.Patient.PhotoPath" class="avatar-xs rounded-circle me-2" alt="@item.Patient.Name">
+                                <img src="@item.Patient.PhotoPath" width="80" height="80" class="avatar-xs rounded-circle me-2" alt="@item.Patient.Name">
                             }
                             @item.Patient?.Name
                         </div>

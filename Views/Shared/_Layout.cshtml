@@ -202,7 +202,7 @@
                 @if (User.Identity.IsAuthenticated)
                 {
                     <li>
-                        <a href="/Dashboard" class="sidebar-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
+                        <a asp-controller="Home" asp-action="Dashboard" class="sidebar-link @(ViewContext.RouteData.Values["Action"]?.ToString() == "Dashboard" ? "active" : "")">
                             <i class="fas fa-home"></i>
                             <span>Dashboard</span>
                         </a>
@@ -368,7 +368,7 @@
                     else if (User.IsInRole("Client"))
                     {
                         <li>
-                            <a asp-controller="Billings"  class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
+                            <a asp-controller="Billings" asp-action="Index" class="sidebar-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Billing" ? "active" : "")">
                                 <i class="fas fa-file-invoice-dollar"></i>
                                 <span>My Invoices</span>
                             </a>

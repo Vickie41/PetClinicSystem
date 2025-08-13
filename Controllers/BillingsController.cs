@@ -23,7 +23,6 @@ namespace PetClinicSystem.Controllers
             //_userManager = userManager;
         }
 
-        // GET: My Invoices
         public async Task<IActionResult> Index()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -35,9 +34,12 @@ namespace PetClinicSystem.Controllers
             }
 
             var invoices = await _context.Billings
-                .Include(b => b.Patient)
                 .Include(b => b.Consultation)
-                .Where(b => b.Patient.OwnerId == owner.OwnerId)
+                    .ThenInclude(c => c.Patient)
+                .Include(b => b.Appointment)
+                    .ThenInclude(a => a.Patient)
+                .Where(b => (b.Consultation != null && b.Consultation.Patient.OwnerId == owner.OwnerId) ||
+                           (b.Appointment != null && b.Appointment.Patient.OwnerId == owner.OwnerId))
                 .OrderByDescending(b => b.BillDate)
                 .ToListAsync();
 

@@ -1,4 +1,4 @@
-﻿@model PetClinicSystem.Models.Appointment
+﻿@model PetClinicSystem.Models.AppointmentViewModel
 
 @{
     ViewData["Title"] = (ViewData["Action"] as string) == "Schedule" ? "Schedule New Appointment" : "Edit Appointment";
@@ -19,24 +19,24 @@
             <form asp-action="@ViewData["Action"]">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-                @if (ViewData["Action"].ToString() == "Edit")
+               @*  @if (ViewData["Action"].ToString() == "Edit")
                 {
                     <input type="hidden" asp-for="AppointmentId" />
-                }
+                } *@
 
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
                             <label asp-for="PatientId" class="form-label"></label>
-                            <select asp-for="PatientId" class="form-select" asp-items="ViewBag.PatientId">
+                            <select asp-for="PatientId" class="form-select" asp-items="Model.AvailablePets">
                                 <option value="">Select Patient</option>
                             </select>
                             <span asp-validation-for="PatientId" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="VetId" class="form-label"></label>
-                            <select asp-for="VetId" class="form-select" asp-items="ViewBag.VetId">
+                            <label asp-for="VetId" class="form-label">Veterinarian</label>
+                            <select asp-for="VetId" class="form-select" asp-items="Model.AvailableVets">
                                 <option value="">Select Veterinarian</option>
                             </select>
                             <span asp-validation-for="VetId" class="text-danger"></span>
@@ -93,28 +93,29 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 
+ 
     <script>
         $(document).ready(function() {
-            // Initialize date picker with time
-            $('#AppointmentDate').datetimepicker({
-                format: 'YYYY-MM-DD HH:mm',
-                stepping: 15,
-                minDate: moment().startOf('day')
+            // Debug form submission
+            $('form').on('submit', function(e) {
+                console.log("Form submitted!");
+                console.log("Form data:", $(this).serialize());
+                
+                // Verify required fields
+                const vetId = $('#VetId').val();
+                const patientId = $('#PatientId').val();
+                console.log(`VetID: ${vetId}, PatientID: ${patientId}`);
+                
+                if (!vetId || !patientId) {
+                    console.error("Required fields are missing!");
+                }
             });
 
-            // Load available time slots when vet or date changes
-            $('#VetId, #AppointmentDate').change(function() {
-                var vetId = $('#VetId').val();
-                var date = $('#AppointmentDate').val();
-
-                if (vetId && date) {
-                    // Call API to get available slots
-                    $.get('/Appointments/GetAvailableSlots', { vetId: vetId, date: date }, function(data) {
-                        // Update UI with available slots
-                        console.log(data);
-                    });
-                }
+            // Debug button click
+            $('button[type="submit"]').click(function() {
+                console.log("Save button clicked");
             });
         });
     </script>
+
 }

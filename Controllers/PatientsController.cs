@@ -1,14 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using PetClinicSystem.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 
 
 namespace PetClinicSystem.Controllers
@@ -24,19 +25,26 @@ namespace PetClinicSystem.Controllers
             //_userManager = userManager;
         }
 
-        // GET: My Pets
+
+        [Authorize(Roles = "Client")]
         public async Task<IActionResult> Index()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+            var owner = await _context.Owners
+                .Include(o => o.Patients)
+                    .ThenInclude(p => p.Consultations)
+                .FirstOrDefaultAsync(o => o.UserId == userId);
 
             if (owner == null)
             {
                 return NotFound("Owner record not found");
             }
 
+            // Get patients with related data that the view needs
             var patients = await _context.Patients
                 .Where(p => p.OwnerId == owner.OwnerId)
+                .Include(p => p.Owner)  // Include Owner for displaying owner name
+                .Include(p => p.Consultations)  // Include Consultations for last visit info
                 .OrderBy(p => p.Name)
                 .ToListAsync();
 
@@ -75,53 +83,93 @@ namespace PetClinicSystem.Controllers
         // GET: Register New Pet
         public IActionResult Create()
         {
+            ViewData["Action"] = "Create";
             return View(new PatientViewModel());
         }
 
-        // POST: Register New Pet
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PatientViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
-
-                if (owner == null)
+                try
                 {
-                    // Create owner record if it doesn't exist
-                    owner = new Owner
+                    var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                    var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId) ??
+                        await CreateOwnerForUser(userId);
+
+                    var patient = new Patient
                     {
-                        UserId = userId,
-                        FirstName = User.Identity.Name.Split(' ')[0],
-                        LastName = User.Identity.Name.Split(' ').Length > 1 ? User.Identity.Name.Split(' ')[1] : "",
-                        Email = User.Identity.Name,
-                        Phone = ""
+                        OwnerId = owner.OwnerId,
+                        Name = model.Name,
+                        Species = model.Species,
+                        Breed = model.Breed,
+                        DateOfBirth = model.DateOfBirth,
+                        Gender = model.Gender,
+                        Color = model.Color,
+                        MicrochipId = model.MicrochipId,
+                        Allergies = model.Allergies,
+                        MedicalNotes = model.MedicalNotes,
+                        CreatedDate = DateTime.Now,
+                        IsActive = true
                     };
-                    _context.Add(owner);
+
+                    // Handle photo upload if provided
+                    if (model.PhotoFile != null && model.PhotoFile.Length > 0)
+                    {
+                        patient.PhotoPath = await SaveUploadedFile(model.PhotoFile);
+                    }
+                    else
+                    {
+                        patient.PhotoPath = null; // or set a default image path
+                    }
+
+                    _context.Add(patient);
                     await _context.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = "Pet registered successfully!";
+                    return RedirectToAction(nameof(Index));
                 }
-
-                var patient = new Patient
+                catch (Exception ex)
                 {
-                    OwnerId = owner.OwnerId,
-                    Name = model.Name,
-                    Species = model.Species,
-                    Breed = model.Breed,
-                    DateOfBirth = model.DateOfBirth,
-                    Gender = model.Gender,
-                    Color = model.Color,
-                    MicrochipId = model.MicrochipId,
-                    CreatedDate = DateTime.Now,
-                    IsActive = true
-                };
-
-                _context.Add(patient);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                    ModelState.AddModelError("", $"Error saving pet: {ex.Message}");
+                }
             }
+
+            ViewData["Action"] = "Create";
             return View(model);
+        }
+
+        private async Task<string> SaveUploadedFile(IFormFile file)
+        {
+            var uploadsFolder = Path.Combine("wwwroot", "UserUploadImage");
+            Directory.CreateDirectory(uploadsFolder);
+
+            var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return $"/UserUploadImage/{uniqueFileName}";
+        }
+
+        private async Task<Owner> CreateOwnerForUser(int userId)
+        {
+            var owner = new Owner
+            {
+                UserId = userId,
+                FirstName = User.Identity.Name.Split(' ')[0],
+                LastName = User.Identity.Name.Split(' ').Length > 1 ? User.Identity.Name.Split(' ')[1] : "",
+                Email = User.Identity.Name,
+                Phone = ""
+            };
+            _context.Add(owner);
+            await _context.SaveChangesAsync();
+            return owner;
         }
 
         // GET: Edit Pet Details
@@ -149,16 +197,19 @@ namespace PetClinicSystem.Controllers
                 Name = patient.Name,
                 Species = patient.Species,
                 Breed = patient.Breed,
-                DateOfBirth = (DateOnly)patient.DateOfBirth,
+                DateOfBirth = patient.DateOfBirth ?? default(DateOnly),
                 Gender = patient.Gender,
                 Color = patient.Color,
-                MicrochipId = patient.MicrochipId
+                MicrochipId = patient.MicrochipId,
+                Allergies = patient.Allergies,
+                MedicalNotes = patient.MedicalNotes,
+                PhotoPath = patient.PhotoPath
             };
 
+            ViewData["Action"] = "Edit";  // Add this line
             return View(model);
         }
 
-        // POST: Edit Pet Details
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, PatientViewModel model)
@@ -170,43 +221,82 @@ namespace PetClinicSystem.Controllers
 
             if (ModelState.IsValid)
             {
-                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
-
-                var patient = await _context.Patients
-                    .FirstOrDefaultAsync(p => p.PatientId == id && p.OwnerId == owner.OwnerId);
-
-                if (patient == null)
-                {
-                    return NotFound();
-                }
-
-                patient.Name = model.Name;
-                patient.Species = model.Species;
-                patient.Breed = model.Breed;
-                patient.DateOfBirth = model.DateOfBirth;
-                patient.Gender = model.Gender;
-                patient.Color = model.Color;
-                patient.MicrochipId = model.MicrochipId;
-
                 try
                 {
-                    _context.Update(patient);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PatientExists(patient.PatientId))
+                    var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                    var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+                    var patient = await _context.Patients
+                        .FirstOrDefaultAsync(p => p.PatientId == id && p.OwnerId == owner.OwnerId);
+
+                    if (patient == null)
                     {
                         return NotFound();
                     }
-                    else
+
+                    // Handle file upload if a new file was provided
+                    if (model.PhotoFile != null && model.PhotoFile.Length > 0)
                     {
-                        throw;
+                        // Delete old photo if exists
+                        if (!string.IsNullOrEmpty(patient.PhotoPath))
+                        {
+                            var oldFilePath = Path.Combine("wwwroot", patient.PhotoPath.TrimStart('/'));
+                            if (System.IO.File.Exists(oldFilePath))
+                            {
+                                System.IO.File.Delete(oldFilePath);
+                            }
+                        }
+
+                        // Upload new photo
+                        var uploadsFolder = Path.Combine("wwwroot", "UserUploadImage");
+                        if (!Directory.Exists(uploadsFolder))
+                        {
+                            Directory.CreateDirectory(uploadsFolder);
+                        }
+
+                        var uniqueFileName = $"{Guid.NewGuid()}{Path.GetExtension(model.PhotoFile.FileName)}";
+                        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await model.PhotoFile.CopyToAsync(fileStream);
+                        }
+
+                        patient.PhotoPath = $"/UserUploadImage/{uniqueFileName}";
                     }
+
+                    // Update other properties
+                    patient.Name = model.Name;
+                    patient.Species = model.Species;
+                    patient.Breed = model.Breed;
+                    patient.DateOfBirth = model.DateOfBirth;
+                    patient.Gender = model.Gender;
+                    patient.Color = model.Color;
+                    patient.MicrochipId = model.MicrochipId;
+                    patient.Allergies = model.Allergies;
+                    patient.MedicalNotes = model.MedicalNotes;
+
+                    _context.Update(patient);
+                    await _context.SaveChangesAsync();
+
+                    TempData["SuccessMessage"] = "Pet record updated successfully!";
+                    return RedirectToAction(nameof(Index));
                 }
-                return RedirectToAction(nameof(Index));
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!PatientExists(model.PatientId))
+                    {
+                        return NotFound();
+                    }
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", $"An error occurred: {ex.Message}");
+                }
             }
+
+            ViewData["Action"] = "Edit";
             return View(model);
         }
 
