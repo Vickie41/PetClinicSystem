@@ -19,5 +19,7 @@ public partial class ActivityLog
 
     public string? Details { get; set; }
 
+    public string? IpAddress { get; set; }
+
     public virtual User? User { get; set; }
 }

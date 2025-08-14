@@ -62,7 +62,6 @@ namespace PetClinicSystem.Controllers
                 .Include(b => b.Patient)
                 .Include(b => b.Consultation)
                 .Include(b => b.BillingDetails)
-                    .ThenInclude(bd => bd.Service)
                 .FirstOrDefaultAsync(b => b.BillId == id && b.Patient.OwnerId == owner.OwnerId);
 
             if (invoice == null)
@@ -174,5 +173,31 @@ namespace PetClinicSystem.Controllers
 
             return View(invoice);
         }
+
+
+        public async Task<IActionResult> PaymentRecords()
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+            if (owner == null)
+            {
+                return NotFound("Owner record not found");
+            }
+
+            var payments = await _context.Billings
+                .Include(b => b.Consultation)
+                    .ThenInclude(c => c.Patient)
+                .Include(b => b.Appointment)
+                    .ThenInclude(a => a.Patient)
+                .Where(b => ((b.Consultation != null && b.Consultation.Patient.OwnerId == owner.OwnerId) ||
+                             (b.Appointment != null && b.Appointment.Patient.OwnerId == owner.OwnerId)) &&
+                             b.PaidAmount > 0)
+                .OrderByDescending(b => b.BillDate)
+                .ToListAsync();
+
+            return View(payments);
+        }
+
     }
 }

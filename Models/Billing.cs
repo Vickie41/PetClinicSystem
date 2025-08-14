@@ -25,13 +25,14 @@ public partial class Billing
 
     public string? Notes { get; set; }
 
+    public int? PatientId { get; set; }
+
     public virtual Appointment? Appointment { get; set; }
 
     public virtual ICollection<BillingDetail> BillingDetails { get; set; } = new List<BillingDetail>();
 
     public virtual Consultation? Consultation { get; set; }
+
     public virtual Patient Patient { get; set; }
-    public int PatientId { get; set; }  
-
-
+    //public int PatientId { get; set; }
 }

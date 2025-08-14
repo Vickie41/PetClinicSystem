@@ -1,59 +1,163 @@
 ﻿@model IEnumerable<PetClinicSystem.Models.Treatment>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Treatments";
+    ViewData["ActivePage"] = "Treatments";
 }
 
-<h1>Index</h1>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-medkit me-2"></i>@ViewData["Title"]
+            </h2>
+        </div>
+        @if (User.IsInRole("Veterinarian"))
+        {
+            <div class="col-md-6 text-end">
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add New Treatment
+                </a>
+            </div>
+        }
+    </div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Name)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Description)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Category)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.DefaultCost)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.IsActive)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Name)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Description)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Category)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.DefaultCost)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.IsActive)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.TreatmentId">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.TreatmentId">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.TreatmentId">Delete</a>
-            </td>
-        </tr>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="treatmentsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Treatment</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Cost</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@item.Name</strong>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Description))
+                                    {
+                                        <span class="text-muted small">@item.Description</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">No description</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-info">@item.Category</span>
+                                </td>
+                                <td>
+                                    @item.DefaultCost
+                                </td>
+                                <td>
+                                    @if (item.IsActive==true)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a asp-action="Details" asp-route-id="@item.TreatmentId" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        @if (User.IsInRole("Veterinarian"))
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@item.TreatmentId" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger delete-btn" data-id="@item.TreatmentId">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .page-title {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .table th {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+    </style>
 }
-    </tbody>
-</table>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#treatmentsTable').DataTable({
+                responsive: true,
+                columnDefs: [
+                    { orderable: false, targets: -1 }
+                ],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search treatments...",
+                }
+            });
+
+            // Delete button handler (only for veterinarians)
+            $('.delete-btn').click(function() {
+                var id = $(this).data('id');
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.post('/Treatments/Delete/' + id, function() {
+                            Swal.fire(
+                                'Deleted!',
+                                'The treatment has been deleted.',
+                                'success'
+                            ).then(() => location.reload());
+                        }).fail(function() {
+                            Swal.fire(
+                                'Error!',
+                                'Something went wrong.',
+                                'error'
+                            );
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

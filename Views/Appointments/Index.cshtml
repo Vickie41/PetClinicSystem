@@ -13,10 +13,14 @@
             </h2>
         </div>
         <div class="col-md-6 text-end">
-            <a asp-action="Schedule" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Schedule Appointment
-            </a>
+            @if (User.IsInRole("Staff") || User.IsInRole("Client"))
+            {
+                <a asp-action="Schedule" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Schedule Appointment
+                </a>
+            }
         </div>
+
     </div>
 
     <div class="card shadow-sm">

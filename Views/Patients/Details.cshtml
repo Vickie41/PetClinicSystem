@@ -13,9 +13,13 @@
             </h2>
         </div>
         <div class="col-md-6 text-end">
-            <a asp-action="Edit" asp-route-id="@Model.PatientId" class="btn btn-primary me-2">
-                <i class="fas fa-edit me-2"></i>Edit
-            </a>
+            @if (!User.IsInRole("Admin"))
+            {
+                <a asp-action="Edit" asp-route-id="@Model.PatientId" class="btn btn-primary me-2">
+                    <i class="fas fa-edit me-2"></i>Edit
+                </a>
+            }
+
             <a asp-action="Index" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Back to List
             </a>
@@ -150,11 +154,16 @@
                         <h5 class="card-title mb-0">
                             <i class="fas fa-calendar-check me-2"></i>Recent Appointments
                         </h5>
-                        <a asp-controller="Appointments" asp-action="Create" asp-route-patientId="@Model.PatientId" class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus me-1"></i>New Appointment
-                        </a>
+
+                        @if (!User.IsInRole("Admin") && !User.IsInRole("Veterinarian"))
+                        {
+                            <a asp-controller="Appointments" asp-action="Create" asp-route-patientId="@Model.PatientId" class="btn btn-sm btn-primary">
+                                <i class="fas fa-plus me-1"></i>New Appointment
+                            </a>
+                        }
                     </div>
                 </div>
+
                 <div class="card-body">
                     @if (Model.Appointments?.Any() ?? false)
                     {

@@ -37,6 +37,8 @@ public partial class PetClinicContext : DbContext
 
     public virtual DbSet<Service> Services { get; set; }
 
+    public virtual DbSet<SystemSetting> SystemSettings { get; set; }
+
     public virtual DbSet<Treatment> Treatments { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -46,7 +48,7 @@ public partial class PetClinicContext : DbContext
     public virtual DbSet<VaccineRecord> VaccineRecords { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=localhost;Database=PetClinic;Integrated Security=True;TrustServerCertificate=True;Encrypt=False;Connect Timeout=30;Pooling=true;Max Pool Size=100;Connection Lifetime=30;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -58,6 +60,7 @@ public partial class PetClinicContext : DbContext
             entity.ToTable("ActivityLog");
 
             entity.Property(e => e.Action).HasMaxLength(100);
+            entity.Property(e => e.IpAddress).HasMaxLength(50);
             entity.Property(e => e.Timestamp).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Type).HasMaxLength(50);
 
@@ -274,6 +277,19 @@ public partial class PetClinicContext : DbContext
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.ServiceName).HasMaxLength(200);
+        });
+
+        modelBuilder.Entity<SystemSetting>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__SystemSe__3214EC07D2D94BF0");
+
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Description).HasMaxLength(1000);
+            entity.Property(e => e.Key).HasMaxLength(100);
+            entity.Property(e => e.ModifiedDate).HasColumnType("datetime");
+            entity.Property(e => e.Value).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Treatment>(entity =>

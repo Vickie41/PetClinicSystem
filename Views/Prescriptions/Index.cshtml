@@ -72,10 +72,13 @@
                                         <a asp-action="Details" asp-route-id="@item.PrescriptionId" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        @if (!(item.IsDispensed ?? false))
+                                        @if (User.IsInRole("Veterinarian"))
                                         {
-                                            <button class="btn btn-sm btn-outline-success dispense-btn" data-id="@item.PrescriptionId">
-                                                <i class="fas fa-check"></i>
+                                            <a asp-action="Edit" asp-route-id="@item.PrescriptionId" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger delete-btn" data-id="@item.PrescriptionId">
+                                                <i class="fas fa-trash-alt"></i>
                                             </button>
                                         }
                                     </div>

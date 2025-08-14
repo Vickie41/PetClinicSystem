@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace PetClinicSystem.Models;
 
 public partial class Patient
 {
-
     public int PatientId { get; set; }
 
     public int OwnerId { get; set; }
@@ -42,6 +40,4 @@ public partial class Patient
     public virtual Owner Owner { get; set; } = null!;
 
     public virtual ICollection<VaccineRecord> VaccineRecords { get; set; } = new List<VaccineRecord>();
-
-    
 }

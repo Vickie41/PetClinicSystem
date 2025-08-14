@@ -1,0 +1,43 @@
+﻿@model PetClinicSystem.Models.SystemSetting
+
+@{
+    ViewData["Title"] = "Create System Setting";
+}
+
+<div class="container-fluid">
+    <h2 class="page-title"><i class="fas fa-sliders-h me-2"></i>@ViewData["Title"]</h2>
+    <div class="card shadow-sm mt-3">
+        <div class="card-body">
+            <form asp-action="Create">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Key" class="form-label"></label>
+                    <input asp-for="Key" class="form-control" />
+                    <span asp-validation-for="Key" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Value" class="form-label"></label>
+                    <input asp-for="Value" class="form-control" />
+                    <span asp-validation-for="Value" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save</button>
+                <a asp-action="Index" class="btn btn-secondary ms-2">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

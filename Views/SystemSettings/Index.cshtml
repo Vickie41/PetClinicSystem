@@ -1,0 +1,85 @@
+﻿@model IEnumerable<PetClinicSystem.Models.SystemSetting>
+
+@{
+    ViewData["Title"] = "System Settings";
+    ViewData["ActivePage"] = "SystemSettings";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-sliders-h me-2"></i>@ViewData["Title"]
+            </h2>
+        </div>
+        <div class="col-md-6 text-end">
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Add New Setting
+            </a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="systemSettingsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Key</th>
+                            <th>Value</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var setting in Model)
+                        {
+                            <tr>
+                                <td>@setting.Key</td>
+                                <td>@setting.Value</td>
+                                <td>@setting.Description</td>
+                                <td>
+                                    <a asp-action="Edit" asp-route-id="@setting.Id" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .page-title {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .table th {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#systemSettingsTable').DataTable({
+                responsive: true,
+                columnDefs: [
+                    { orderable: false, targets: -1 } // Actions column not sortable
+                ],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search settings..."
+                }
+            });
+        });
+    </script>
+}

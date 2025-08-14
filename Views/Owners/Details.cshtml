@@ -1,90 +1,182 @@
 ﻿@model PetClinicSystem.Models.Owner
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Owner Details";
+    ViewData["ActivePage"] = "Owners";
 }
 
-<h1>Details</h1>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-user me-2"></i>@ViewData["Title"]
+            </h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">Owners</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@Model.FirstName @Model.LastName</li>
+                </ol>
+            </nav>
+        </div>
+        <div class="col-md-6 text-end">
+            @if (User.IsInRole("Staff") || User.IsInRole("Client"))
+            {
+                <a asp-action="Edit" asp-route-id="@Model.OwnerId" class="btn btn-primary me-2">
+                    <i class="fas fa-edit me-2"></i>Edit Owner
+                </a>
+            }
 
-<div>
-    <h4>Owner</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.FirstName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FirstName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.LastName)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.LastName)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Address)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Address)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.City)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.City)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.State)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.State)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ZipCode)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ZipCode)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Phone)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Phone)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Email)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Email)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EmergencyContact)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EmergencyContact)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EmergencyPhone)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EmergencyPhone)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Notes)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Notes)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CreatedDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CreatedDate)
-        </dd>
-    </dl>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Basic Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="avatar-lg bg-soft-primary rounded-circle d-flex align-items-center justify-content-center mb-3">
+                                <i class="fas fa-user fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h3 class="mb-1">@Model.FirstName @Model.LastName</h3>
+                            <p class="text-muted mb-2">Registered on @Model.CreatedDate</p>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                <a href="tel:@Model.Phone" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-phone me-1"></i> @Model.Phone
+                                </a>
+                                @if (!string.IsNullOrEmpty(Model.Email))
+                                {
+                                    <a href="mailto:@Model.Email" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-envelope me-1"></i> @Model.Email
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="mb-3"><i class="fas fa-map-marker-alt me-2"></i>Address</h5>
+                            <address>
+                                @Model.Address<br />
+                                @Model.City, @Model.State @Model.ZipCode
+                            </address>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="mb-3"><i class="fas fa-exclamation-triangle me-2"></i>Emergency Contact</h5>
+                            <p>
+                                <strong>@Model.EmergencyContact</strong><br />
+                                @Model.EmergencyPhone
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-sticky-note me-2"></i>Notes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <p>@Model.Notes</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No notes available</p>
+                    }
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-paw me-2"></i>Pets (@Model.Patients?.Count ?? 0)
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.Patients != null && Model.Patients.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var pet in Model.Patients)
+                            {
+                                <a asp-controller="Patients" asp-action="Details" asp-route-id="@pet.PatientId"
+                                   class="list-group-item list-group-item-action">
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(pet.PhotoPath))
+                                        {
+                                            <img src="@pet.PhotoPath" class="avatar-sm rounded-circle me-3" alt="@pet.Name">
+                                        }
+                                        else
+                                        {
+                                            <div class="avatar-sm bg-soft-primary rounded-circle me-3 d-flex align-items-center justify-content-center">
+                                                <i class="fas fa-paw"></i>
+                                            </div>
+                                        }
+                                        <div>
+                                            <strong>@pet.Name</strong>
+                                            <div class="text-muted small">@pet.Species • @pet.Breed</div>
+                                        </div>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">No pets registered</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.OwnerId">Edit</a> |
-    <a asp-action="Index">Back to List</a>
-</div>
+
+@section Styles {
+    <style>
+        .avatar-sm {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+        }
+
+        .avatar-lg {
+            width: 120px;
+            height: 120px;
+            display: flex;
+        }
+
+        .page-title {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .card-header {
+            font-weight: 600;
+        }
+
+        address {
+            font-style: normal;
+        }
+
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+        }
+    </style>
+}

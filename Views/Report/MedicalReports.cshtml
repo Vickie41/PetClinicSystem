@@ -1,0 +1,103 @@
+﻿@model PetClinicSystem.Models.MedicalReportsViewModel
+@{
+    ViewData["Title"] = "Medical Reports";
+    ViewData["ActivePage"] = "Reports";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-heartbeat me-2"></i>@ViewData["Title"]
+            </h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Consultations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="consultationTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Patient</th>
+                                    <th>Veterinarian</th>
+                                    <th>Diagnosis</th>
+                                    <th>Treatment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Consultations)
+                                {
+                                    <tr>
+                                        <td>@item.ConsultationDate</td>
+                                        <td>@item.Patient?.Name</td>
+                                        <td>@item.Vet?.FirstName @item.Vet?.LastName</td>
+                                        <td>@item.Diagnosis</td>
+                                        <td>@item.ConsultationTreatments</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Vaccinations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="vaccinationTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Patient</th>
+                                    <th>Vaccine</th>
+                                    <th>Next Due</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.VaccineRecords)
+                                {
+                                    <tr>
+                                        <td>@item.DateGiven.ToString("MMM dd, yyyy")</td>
+                                        <td>@item.Patient?.Name</td>
+                                        <td>@item.Vaccine</td>
+                                        <td>@item.NextDueDate</td>
+                                        <td>
+                                            <span class="badge bg-@((item.NextDueDate.HasValue && item.NextDueDate.Value >= DateOnly.FromDateTime(DateTime.Today)) ? "success" : "warning")">
+                                                @(item.NextDueDate.HasValue && item.NextDueDate.Value >= DateOnly.FromDateTime(DateTime.Today) ? "Completed" : "Pending")
+                                            </span>
+                                        </td>
+
+
+
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#consultationTable').DataTable();
+            $('#vaccinationTable').DataTable();
+        });
+    </script>
+}

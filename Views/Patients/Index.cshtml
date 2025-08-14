@@ -1,6 +1,5 @@
 ﻿@model IEnumerable<PetClinicSystem.Models.Patient>
 
-
 @{
     ViewData["Title"] = "My Pets";
     ViewData["ActivePage"] = "Patients";
@@ -14,9 +13,12 @@
             </h2>
         </div>
         <div class="col-md-6 text-end">
-            <a asp-action="Create" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>Add New Pet
-            </a>
+            @if (User.IsInRole("Staff") || User.IsInRole("Client"))
+            {
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Add New Pet
+                </a>
+            }
         </div>
     </div>
 
@@ -70,15 +72,12 @@
                                         var dob = item.DateOfBirth.Value;
                                         var today = DateOnly.FromDateTime(DateTime.Today);
                                         var age = today.Year - dob.Year;
-
                                         if (dob > today.AddYears(-age))
                                         {
                                             age--;
                                         }
-
                                         <span>@age years</span>
                                     }
-
                                     else
                                     {
                                         <span class="text-muted">Unknown</span>
@@ -91,7 +90,7 @@
                                     @if (lastVisit != null)
                                     {
                                         <span>@lastVisit.ConsultationDate?.ToString("MMM dd, yyyy")</span>
-                                        <span class="d-block small text-muted">@lastVisit.Diagnosis?</span>
+                                        <span class="d-block small text-muted">@lastVisit.Diagnosis</span>
                                     }
                                     else
                                     {
@@ -103,12 +102,15 @@
                                         <a asp-action="Details" asp-route-id="@item.PatientId" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-eye"></i>
                                         </a>
-                                        <a asp-action="Edit" asp-route-id="@item.PatientId" class="btn btn-sm btn-outline-secondary">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-outline-danger delete-btn" data-id="@item.PatientId">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
+                                        @if (!User.IsInRole("Admin") && !User.IsInRole("Veterinarian"))
+                                        {
+                                            <a asp-action="Edit" asp-route-id="@item.PatientId" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-danger delete-btn" data-id="@item.PatientId">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        }
                                     </div>
                                 </td>
                             </tr>
