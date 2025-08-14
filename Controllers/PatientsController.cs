@@ -26,7 +26,7 @@ namespace PetClinicSystem.Controllers
         }
 
 
-        [Authorize(Roles = "Client,Admin")]
+        [Authorize(Roles = "Client,Admin,Staff")]
         public async Task<IActionResult> Index()
         {
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
