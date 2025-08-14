@@ -48,7 +48,7 @@
                             <span class="detail-value">@(Model.TodayAppointmentsCount - Model.CompletedAppointmentsCount)</span>
                         </div>
                     </div>
-                    <a href="/Appointments" class="stat-link">View all appointments <i class="fas fa-arrow-right ms-2"></i></a>
+                    <a asp-controller="Appointments" asp-action="Index" class="stat-link">View all appointments <i class="fas fa-arrow-right ms-2"></i></a>
                 </div>
             </div>
         </div>
@@ -72,7 +72,7 @@
                             <div class="progress-bar" role="progressbar" style="width: @((Model.NewPatientsThisMonth / (double)(Model.NewPatientsThisMonth + 10)) * 100)%"></div>
                         </div>
                     </div>
-                    <a href="/Patients" class="stat-link">View all patients <i class="fas fa-arrow-right ms-2"></i></a>
+                    <a asp-controller="Patients" asp-action="Index" class="stat-link">View all patients <i class="fas fa-arrow-right ms-2"></i></a>
                 </div>
             </div>
         </div>
@@ -96,7 +96,7 @@
                             <span class="detail-value">@Model.PendingPaymentsAmount.ToString("C")</span>
                         </div>
                     </div>
-                    <a href="/Billings" class="stat-link">View all bills <i class="fas fa-arrow-right ms-2"></i></a>
+                    <a asp-controller="Billings" asp-action="Index" class="stat-link">View all bills <i class="fas fa-arrow-right ms-2"></i></a>
                 </div>
             </div>
         </div>
@@ -107,15 +107,15 @@
                 <div class="card-body">
                     <h5 class="stat-title">Quick Actions</h5>
                     <div class="quick-actions mt-3">
-                        <a href="/Appointments/Schedule" class="quick-action">
+                        <a asp-controller="Appointments" asp-action="Schedule" class="quick-action">
                             <i class="fas fa-calendar-plus"></i>
                             <span>Schedule Appointment</span>
                         </a>
-                        <a href="/Patients/Create" class="quick-action">
+                        <a asp-controller="Patients" asp-action="Create" class="quick-action">
                             <i class="fas fa-user-plus"></i>
                             <span>Register Patient</span>
                         </a>
-                        <a href="/Billings/Create" class="quick-action">
+                        <a asp-controller="Billings" asp-action="Create" class="quick-action">
                             <i class="fas fa-file-invoice-dollar"></i>
                             <span>Create Invoice</span>
                         </a>
@@ -137,7 +137,7 @@
                         <i class="fas fa-calendar-alt me-2"></i>Upcoming Appointments (Next 3 Days)
                     </h5>
                     <div class="card-actions">
-                        <a href="/Appointments/Schedule" class="btn btn-sm btn-primary">
+                        <a asp-controller="Appointments" asp-action="Schedule" class="btn btn-sm btn-primary">
                             <i class="fas fa-plus me-1"></i> Schedule
                         </a>
                     </div>
@@ -181,7 +181,7 @@
                         <i class="fas fa-users me-2"></i>New Owners
                     </h5>
                     <div class="card-actions">
-                        <a href="/Owners/Create" class="btn btn-sm btn-primary">
+                        <a asp-controller="Owners" asp-action="Schedule" class="btn btn-sm btn-primary">
                             <i class="fas fa-plus me-1"></i> Add Owner
                         </a>
                     </div>
@@ -190,7 +190,10 @@
                     <div class="list-group list-group-flush">
                         @foreach (var owner in Model.NewOwners)
                         {
-                            <a href="/Owners/Details/@owner.OwnerId" class="list-group-item list-group-item-action">
+                            <a asp-controller="Owners" asp-action="Details" asp-route-id="@owner.OwnerId" class="list-group-item list-group-item-action">
+                                @owner.FirstName @owner.LastName
+                            
+
                                 <div class="d-flex align-items-center">
                                     <div class="avatar avatar-sm me-3">
                                         <span class="avatar-text bg-primary rounded">@owner.FirstName[0]</span>
