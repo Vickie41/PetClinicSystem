@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -25,26 +26,120 @@ namespace PetClinicSystem.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
-
-            if (owner == null)
+            if (User.IsInRole("Client"))
             {
-                return NotFound("Owner record not found");
-            }
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
 
-            var invoices = await _context.Billings
-                .Include(b => b.Consultation)
-                    .ThenInclude(c => c.Patient)
-                .Include(b => b.Appointment)
-                    .ThenInclude(a => a.Patient)
-                .Where(b => (b.Consultation != null && b.Consultation.Patient.OwnerId == owner.OwnerId) ||
-                           (b.Appointment != null && b.Appointment.Patient.OwnerId == owner.OwnerId))
-                .OrderByDescending(b => b.BillDate)
+                if (owner == null)
+                {
+                    return NotFound("Owner record not found");
+                }
+
+                var invoices = await _context.Billings
+                    .Include(b => b.Consultation)
+                        .ThenInclude(c => c.Patient)
+                    .Include(b => b.Appointment)
+                        .ThenInclude(a => a.Patient)
+                    .Where(b => (b.Consultation != null && b.Consultation.Patient.OwnerId == owner.OwnerId) ||
+                               (b.Appointment != null && b.Appointment.Patient.OwnerId == owner.OwnerId))
+                    .OrderByDescending(b => b.BillDate)
+                    .ToListAsync();
+
+                return View(invoices);
+            }
+            else
+            {
+                // Vet/Staff/Admin should see ALL billings
+                var invoices = await _context.Billings
+                    .Include(b => b.Consultation)
+                        .ThenInclude(c => c.Patient)
+                    .Include(b => b.Appointment)
+                        .ThenInclude(a => a.Patient)
+                    .OrderByDescending(b => b.BillDate)
+                    .ToListAsync();
+
+                return View(invoices);
+            }
+        }
+
+
+        // GET: Billings/Create
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> Create()
+        {
+            var model = new BillingViewModel
+            {
+                BillDate = DateTime.Now,
+                DueDate = DateTime.Now.AddDays(14),
+                Status = "Unpaid"
+            };
+
+            // Populate the select lists
+            model.AvailableConsultations = await _context.Consultations
+                .Select(c => new SelectListItem
+                {
+                    Value = c.ConsultationId.ToString(),
+                    Text = $"Consultation #{c.ConsultationId} (Patient: {c.Patient.Name})"
+                })
                 .ToListAsync();
 
-            return View(invoices);
+            model.AvailableAppointments = await _context.Appointments
+                .Select(a => new SelectListItem
+                {
+                    Value = a.AppointmentId.ToString(),
+                    Text = $"Appointment #{a.AppointmentId} (Patient: {a.Patient.Name})"
+                })
+                .ToListAsync();
+
+            return View(model);
         }
+
+        // POST: Billings/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Staff,Admin")]
+        public async Task<IActionResult> Create(BillingViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var billing = new Billing
+                {
+                    ConsultationId = model.ConsultationId,
+                    AppointmentId = model.AppointmentId,
+                    TotalAmount = model.TotalAmount,
+                    DueDate = model.DueDate,
+                    Notes = model.Notes,
+                    BillDate = DateTime.Now,
+                    Status = "Unpaid"
+                };
+
+                _context.Add(billing);
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Repopulate select lists if validation fails
+            model.AvailableConsultations = await _context.Consultations
+                .Select(c => new SelectListItem
+                {
+                    Value = c.ConsultationId.ToString(),
+                    Text = $"Consultation #{c.ConsultationId} (Patient: {c.Patient.Name})"
+                })
+                .ToListAsync();
+
+            model.AvailableAppointments = await _context.Appointments
+                .Select(a => new SelectListItem
+                {
+                    Value = a.AppointmentId.ToString(),
+                    Text = $"Appointment #{a.AppointmentId} (Patient: {a.Patient.Name})"
+                })
+                .ToListAsync();
+
+            return View(model);
+        }
+
+
 
         // GET: Invoice Details
         public async Task<IActionResult> Details(int? id)
@@ -177,27 +272,45 @@ namespace PetClinicSystem.Controllers
 
         public async Task<IActionResult> PaymentRecords()
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
-
-            if (owner == null)
+            if (User.IsInRole("Client"))
             {
-                return NotFound("Owner record not found");
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
+
+                if (owner == null)
+                {
+                    return NotFound("Owner record not found");
+                }
+
+                var payments = await _context.Billings
+                    .Include(b => b.Consultation)
+                        .ThenInclude(c => c.Patient)
+                    .Include(b => b.Appointment)
+                        .ThenInclude(a => a.Patient)
+                    .Where(b => ((b.Consultation != null && b.Consultation.Patient.OwnerId == owner.OwnerId) ||
+                                 (b.Appointment != null && b.Appointment.Patient.OwnerId == owner.OwnerId)) &&
+                                 b.PaidAmount > 0)
+                    .OrderByDescending(b => b.BillDate)
+                    .ToListAsync();
+
+                return View(payments);
             }
+            else
+            {
+                // For Admin, Vet, Staff → show ALL payments
+                var payments = await _context.Billings
+                    .Include(b => b.Consultation)
+                        .ThenInclude(c => c.Patient)
+                    .Include(b => b.Appointment)
+                        .ThenInclude(a => a.Patient)
+                    .Where(b => b.PaidAmount > 0)
+                    .OrderByDescending(b => b.BillDate)
+                    .ToListAsync();
 
-            var payments = await _context.Billings
-                .Include(b => b.Consultation)
-                    .ThenInclude(c => c.Patient)
-                .Include(b => b.Appointment)
-                    .ThenInclude(a => a.Patient)
-                .Where(b => ((b.Consultation != null && b.Consultation.Patient.OwnerId == owner.OwnerId) ||
-                             (b.Appointment != null && b.Appointment.Patient.OwnerId == owner.OwnerId)) &&
-                             b.PaidAmount > 0)
-                .OrderByDescending(b => b.BillDate)
-                .ToListAsync();
-
-            return View(payments);
+                return View(payments);
+            }
         }
+
 
     }
 }
