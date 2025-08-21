@@ -48,7 +48,7 @@ public partial class PetClinicContext : DbContext
     public virtual DbSet<VaccineRecord> VaccineRecords { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Server=localhost;Database=PetClinic;Integrated Security=True;TrustServerCertificate=True;Encrypt=False;Connect Timeout=30;Pooling=true;Max Pool Size=100;Connection Lifetime=30;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -142,16 +142,38 @@ public partial class PetClinicContext : DbContext
 
         modelBuilder.Entity<Consultation>(entity =>
         {
-            entity.HasKey(e => e.ConsultationId).HasName("PK__Consulta__5D014A98732C44DD");
+            entity.ToTable("Consultations");
 
+            entity.HasKey(e => e.ConsultationId).HasName("PK__Consulta__5D014A98732C44DD");
+            entity.Property(c => c.ConsultationId).HasColumnName("ConsultationId");
+
+            // Explicitly configure ALL column names
+            entity.Property(e => e.ConsultationId).HasColumnName("ConsultationId");
+            entity.Property(e => e.AppointmentId).HasColumnName("AppointmentId");
+            entity.Property(e => e.VetId).HasColumnName("VetId");
+            entity.Property(e => e.PatientId).HasColumnName("PatientId");
             entity.Property(e => e.ConsultationDate)
+                .HasColumnName("ConsultationDate")
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.FollowUpDate).HasColumnType("datetime");
-            entity.Property(e => e.IsFollowUp).HasDefaultValue(false);
-            entity.Property(e => e.Temperature).HasColumnType("decimal(5, 2)");
-            entity.Property(e => e.Weight).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.Weight)
+                .HasColumnName("Weight")
+                .HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.Temperature)
+                .HasColumnName("Temperature")
+                .HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.HeartRate).HasColumnName("HeartRate");
+            entity.Property(e => e.RespirationRate).HasColumnName("RespirationRate");
+            entity.Property(e => e.Diagnosis).HasColumnName("Diagnosis");
+            entity.Property(e => e.Notes).HasColumnName("Notes");
+            entity.Property(e => e.FollowUpDate)
+                .HasColumnName("FollowUpDate")
+                .HasColumnType("datetime");
+            entity.Property(e => e.IsFollowUp)
+                .HasColumnName("IsFollowUp")
+                .HasDefaultValue(false);
 
+            // Relationships
             entity.HasOne(d => d.Appointment).WithMany(p => p.Consultations)
                 .HasForeignKey(d => d.AppointmentId)
                 .OnDelete(DeleteBehavior.ClientSetNull)

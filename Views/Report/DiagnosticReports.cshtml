@@ -1,0 +1,87 @@
+﻿@model PetClinicSystem.Models.DiagnosticReportsViewModel
+
+@{
+    ViewData["Title"] = "Diagnostic Reports";
+}
+
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <h4 class="mb-0">
+            <i class="fas fa-diagnoses"></i> @ViewData["Title"]
+        </h4>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="form-row">
+                <div class="form-group col-md-3">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" class="form-control" id="startDate" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="form-group col-md-3">
+                    <label for="endDate">End Date</label>
+                    <input type="date" class="form-control" id="endDate" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="form-group col-md-3 align-self-end">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Tests</h5>
+                        <p class="display-4 text-primary">@Model.TotalTests</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card bg-light">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Most Common Test</h5>
+                        <p class="display-6 text-primary">@Model.MostCommonTest</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Date</th>
+                        <th>Patient</th>
+                        <th>Owner</th>
+                        <th>Test Type</th>
+                        <th>Test Name</th>
+                        <th>Veterinarian</th>
+                        <th>Results</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var diagnostic in Model.Diagnostics)
+                    {
+                        <tr>
+                            <td>@diagnostic.TestDate?.ToString("d")</td>
+                            <td>@diagnostic.Consultation?.Patient?.Name</td>
+                            <td>@diagnostic.Consultation?.Patient?.Owner?.FirstName</td>
+                            <td>@diagnostic.TestType</td>
+                            <td>@diagnostic.TestName</td>
+                            <td>@diagnostic.Consultation?.Vet?.FirstName</td>
+                            <td>@diagnostic.Results</td>
+                            <td>
+                                <span class="badge @(diagnostic.Status?.ToLower() == "completed" ? "badge-success" :
+                                                                                      diagnostic.Status?.ToLower() == "pending" ? "badge-warning" :
+                                                                                      "badge-secondary")">
+                                @diagnostic.Status
+                            </span>
+                        </td>
+                    </tr>
+                                        }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

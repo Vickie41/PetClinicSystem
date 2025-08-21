@@ -1,124 +1,194 @@
-﻿//using Microsoft.AspNetCore.Identity;
-//using Microsoft.AspNetCore.Mvc;
-//using Microsoft.AspNetCore.Mvc.Rendering;
-//using Microsoft.EntityFrameworkCore;
-//using PetClinicSystem.Models;
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Security.Claims;
-//using System.Threading.Tasks;
-
-//namespace PetClinicSystem.Controllers
-//{
-//    public class ConsultationsController : Controller
-//    {
-//        private readonly PetClinicContext _context;
-//        //private readonly UserManager<IdentityUser> _userManager;
-
-//        public ConsultationsController(PetClinicContext context) /*UserManager<IdentityUser> userManager)*/
-//        {
-//            _context = context;
-//            //_userManager = userManager;
-//        }
-
-//        // GET: My Pet's Consultations
-//        public async Task<IActionResult> Index(int? patientId)
-//        {
-//            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-//            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
-
-//            if (owner == null)
-//            {
-//                return NotFound("Owner record not found");
-//            }
-
-//            IQueryable<Consultation> consultationsQuery = _context.Consultations
-//                .Include(c => c.Patient)
-//                .Include(c => c.Vet)
-//                .Where(c => c.Patient.OwnerId == owner.OwnerId);
-
-//            if (patientId.HasValue)
-//            {
-//                consultationsQuery = consultationsQuery.Where(c => c.PatientId == patientId.Value);
-//            }
-
-//            var consultations = await consultationsQuery
-//                .OrderByDescending(c => c.ConsultationDate)
-//                .ToListAsync();
-
-//            ViewBag.Pets = await _context.Patients
-//                .Where(p => p.OwnerId == owner.OwnerId)
-//                .Select(p => new SelectListItem
-//                {
-//                    Value = p.PatientId.ToString(),
-//                    Text = p.Name
-//                })
-//                .ToListAsync();
-
-//            return View(consultations);
-//        }
-
-//        // GET: Consultation Details
-//        public async Task<IActionResult> Details(int? id)
-//        {
-//            if (id == null)
-//            {
-//                return NotFound();
-//            }
-
-//            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-//            var owner = await _context.Owners.FirstOrDefaultAsync(o => o.UserId == userId);
-
-//            var consultation = await _context.Consultations
-//                .Include(c => c.Patient)
-//                .Include(c => c.Vet)
-//                .Include(c => c.ConsultationTreatments)
-//                    .ThenInclude(ct => ct.Treatment)
-//                .Include(c => c.DiagnosticTests)
-//                .Include(c => c.Prescriptions)
-//                .FirstOrDefaultAsync(c => c.ConsultationId == id && c.Patient.OwnerId == owner.OwnerId);
-
-//            if (consultation == null)
-//            {
-//                return NotFound();
-//            }
-
-//            return View(consultation);
-//        }
-//    }
-//}
-
-
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using PetClinicSystem.Models;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace PetClinicSystem.Controllers
 {
+    [Authorize(Roles = "Veterinarian,Staff,Admin")]
     public class ConsultationsController : Controller
     {
         private readonly PetClinicContext _context;
+        private readonly ILogger<ConsultationsController> _logger;
 
-        public ConsultationsController(PetClinicContext context)
+        public ConsultationsController(PetClinicContext context, ILogger<ConsultationsController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
+        // GET: Consultations
+        public async Task<IActionResult> Index(int? patientId, DateTime? fromDate, DateTime? toDate, string searchDiagnosis)
+        {
+            try
+            {
+                IQueryable<Consultation> query = _context.Consultations
+                    .Include(c => c.Patient)
+                    .Include(c => c.Vet)
+                    .OrderByDescending(c => c.ConsultationDate);
+
+                // Filter by patient if specified
+                if (patientId.HasValue)
+                {
+                    query = query.Where(c => c.PatientId == patientId.Value);
+                }
+
+                // Filter by date range if specified
+                if (fromDate.HasValue)
+                {
+                    query = query.Where(c => c.ConsultationDate >= fromDate.Value);
+                }
+
+                if (toDate.HasValue)
+                {
+                    query = query.Where(c => c.ConsultationDate <= toDate.Value.AddDays(1));
+                }
+
+                // Filter by diagnosis search term
+                if (!string.IsNullOrEmpty(searchDiagnosis))
+                {
+                    query = query.Where(c => c.Diagnosis.Contains(searchDiagnosis));
+                }
+
+                // For veterinarians, show only their consultations
+                if (User.IsInRole("Veterinarian"))
+                {
+                    var vetId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                    query = query.Where(c => c.VetId == vetId);
+                }
+
+                var consultations = await query.ToListAsync();
+
+                // Populate patient dropdown for filter
+                ViewBag.Patients = await _context.Patients
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = $"{p.Name} ({p.Species})"
+                    })
+                    .ToListAsync();
+
+                return View(consultations);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error loading consultations");
+                return StatusCode(500, "An error occurred while loading consultations");
+            }
+        }
+
+        // GET: Consultations/Details/5
+        //public async Task<IActionResult> Details(int id)
+        //{
+        //    var consultation = await _context.Consultations
+        //            .Include(c => c.Patient)
+        //                .ThenInclude(p => p.Owner)
+        //            .Include(c => c.Vet)
+        //            .Include(c => c.ConsultationTreatments)
+        //                .ThenInclude(ct => ct.Treatment)
+        //            .Include(c => c.Prescriptions)
+        //            .Include(c => c.DiagnosticTests)
+        //            .Include(c => c.VaccineRecords)
+        //                .ThenInclude(vr => vr.Vaccine)
+        //            .FirstOrDefaultAsync(c => c.ConsultationId == id);
+
+        //        if (consultation == null)
+        //        {
+        //            return NotFound();
+        //        }
+
+        //        // Verify access for veterinarians
+        //        if (User.IsInRole("Veterinarian"))
+        //        {
+        //            var vetId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        //            if (consultation.VetId != vetId)
+        //            {
+        //                return Forbid();
+        //            }
+        //        }
+
+        //        return View(consultation);  
+        //}
+
+
+        // GET: Consultations/Details/5
+        // GET: Consultations/Details/5
+        public async Task<IActionResult> Details(int id)
+        {
+            try
+            {
+                // Load the consultation with all related data
+                var consultation = await _context.Consultations
+                    .Include(c => c.Patient)
+                        .ThenInclude(p => p.Owner)
+                    .Include(c => c.Vet)
+                    .Include(c => c.ConsultationTreatments)
+                        .ThenInclude(ct => ct.Treatment)
+                    .Include(c => c.Prescriptions)
+                    .Include(c => c.DiagnosticTests)
+                    .Include(c => c.VaccineRecords)
+                        .ThenInclude(vr => vr.Vaccine)
+                    .FirstOrDefaultAsync(c => c.ConsultationId == id);
+
+                if (consultation == null)
+                {
+                    return NotFound();
+                }
+
+                // Verify access for veterinarians
+                if (User.IsInRole("Veterinarian"))
+                {
+                    var vetId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+                    if (consultation.VetId != vetId)
+                    {
+                        return Forbid();
+                    }
+                }
+
+                return View(consultation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error loading consultation details for ID {id}");
+
+                TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
+                if (ex.InnerException != null)
+                {
+                    TempData["ErrorMessage"] += $" - {ex.InnerException.Message}";
+                }
+
+                return RedirectToAction("Index");
+            }
+        }
+
+
+
+
+
         // GET: Consultations/Create
+        [Authorize(Roles = "Veterinarian")]
         public IActionResult Create()
         {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var username = User.Identity.Name;
+
             var viewModel = new ConsultationViewModel
             {
+                ConsultationDate = DateTime.Now,
+                VetName = username, // For display only
                 AvailablePatients = _context.Patients
-                    .Select(p => new SelectListItem { Value = p.PatientId.ToString(), Text = p.Name })
-                    .ToList(),
-                AvailableVets = _context.Users
-                    .Where(u => u.Role == "Veterinarian")
-                    .Select(v => new SelectListItem { Value = v.UserId.ToString(), Text = v.Username })
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = $"{p.Name} ({p.Species})"
+                    })
                     .ToList()
             };
 
@@ -128,14 +198,41 @@ namespace PetClinicSystem.Controllers
         // POST: Consultations/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Veterinarian")]
         public async Task<IActionResult> Create(ConsultationViewModel model)
         {
-            if (ModelState.IsValid)
+            var vetId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+
+            try
             {
+                // Find the most recent scheduled appointment for this patient
+                var appointment = await _context.Appointments
+                    .Where(a => a.PatientId == model.PatientId && a.Status == "Scheduled")
+                    .OrderByDescending(a => a.AppointmentDate)
+                    .FirstOrDefaultAsync();
+
+                if (appointment == null)
+                {
+                    // If no appointment found, create one automatically
+                    appointment = new Appointment
+                    {
+                        PatientId = model.PatientId,
+                        VetId = vetId,
+                        AppointmentDate = DateTime.Now,
+                        Duration = 30, // Default duration
+                        Reason = "Consultation",
+                        Status = "Completed",
+                        CreatedDate = DateTime.Now
+                    };
+                    _context.Appointments.Add(appointment);
+                    await _context.SaveChangesAsync();
+                }
+
                 var consultation = new Consultation
                 {
+                    AppointmentId = appointment.AppointmentId, // CRITICAL: Set the AppointmentId
                     PatientId = model.PatientId,
-                    VetId = model.VetId,
+                    VetId = vetId,
                     ConsultationDate = model.ConsultationDate,
                     Diagnosis = model.Diagnosis,
                     Notes = model.Notes,
@@ -149,72 +246,148 @@ namespace PetClinicSystem.Controllers
 
                 _context.Add(consultation);
                 await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+
+                // Update appointment status to completed
+                if (appointment.Status != "Completed")
+                {
+                    appointment.Status = "Completed";
+                    _context.Appointments.Update(appointment);
+                    await _context.SaveChangesAsync();
+                }
+
+                return RedirectToAction("Details", new { id = consultation.ConsultationId });
             }
+            catch (Exception ex)
+            {
+                // Log the error (ex.Message)
+                ModelState.AddModelError("", "An error occurred while creating the consultation. Please try again.");
 
-            // Reload dropdowns if validation fails
-            model.AvailablePatients = _context.Patients
-                .Select(p => new SelectListItem { Value = p.PatientId.ToString(), Text = p.Name })
-                .ToList();
-            model.AvailableVets = _context.Users
-                .Where(u => u.Role == "Veterinarian")
-                .Select(v => new SelectListItem { Value = v.UserId.ToString(), Text = v.Username })
-                .ToList();
+                // Reload dropdown data
+                model.AvailablePatients = _context.Patients
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = $"{p.Name} ({p.Species})"
+                    })
+                    .ToList();
 
-            return View(model);
+                return View(model);
+            }
         }
 
-        // GET: Consultations/Edit/5
-        public async Task<IActionResult> Edit(int? id)
+
+
+        private async Task ReloadDropdowns(ConsultationViewModel model)
         {
-            if (id == null) return NotFound();
+            model.AvailablePatients = await _context.Patients
+                .Select(p => new SelectListItem
+                {
+                    Value = p.PatientId.ToString(),
+                    Text = $"{p.Name} ({p.Species})",
+                    Selected = (p.PatientId == model.PatientId)
+                })
+                .ToListAsync();
 
-            var consultation = await _context.Consultations.FindAsync(id);
-            if (consultation == null) return NotFound();
+            // Reload vet name for display
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var vet = await _context.Users.FindAsync(userId);
+            model.VetName = vet?.Username;
+        }
 
-            var viewModel = new ConsultationViewModel
+
+        //private async Task LoadDropdowns(ConsultationViewModel model)
+        //{
+        //    model.AvailablePatients = await _context.Patients
+        //        .Select(p => new SelectListItem
+        //        {
+        //            Value = p.PatientId.ToString(),
+        //            Text = $"{p.Name} ({p.Species})",
+        //            Selected = p.PatientId == model.PatientId
+        //        })
+        //        .ToListAsync();
+
+        //    model.AvailableVets = await _context.Users
+        //        .Where(u => u.Role == "Veterinarian")
+        //        .Select(u => new SelectListItem
+        //        {
+        //            Value = u.UserId.ToString(),
+        //            Text = u.Username,
+        //            Selected = u.UserId == model.VetId
+        //        })
+        //        .ToListAsync();
+        //}
+
+        // GET: Consultations/Edit/5
+        [Authorize(Roles = "Veterinarian")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            try
             {
-                ConsultationId = consultation.ConsultationId,
-                PatientId = consultation.PatientId,
-                VetId = consultation.VetId,
-                ConsultationDate = DateTime.Now,
-                Diagnosis = consultation.Diagnosis,
-                Notes = consultation.Notes,
-                Weight = consultation.Weight,
-                Temperature = consultation.Temperature,
-                HeartRate = consultation.HeartRate,
-                RespirationRate = consultation.RespirationRate,
-                IsFollowUp = consultation.IsFollowUp==true,
-                FollowUpDate = consultation.FollowUpDate,
+                var vetId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-                AvailablePatients = _context.Patients
-                    .Select(p => new SelectListItem { Value = p.PatientId.ToString(), Text = p.Name })
-                    .ToList(),
-                AvailableVets = _context.Users
-                    .Where(u => u.Role == "Veterinarian")
-                    .Select(v => new SelectListItem { Value = v.UserId.ToString(), Text = v.Username })
-                    .ToList()
-            };
+                var consultation = await _context.Consultations
+                    .Include(c => c.Patient)
+                    .Include(c => c.Vet)
+                    .FirstOrDefaultAsync(c => c.ConsultationId == id && c.VetId == vetId);
 
-            return View(viewModel);
+                if (consultation == null)
+                {
+                    return NotFound();
+                }
+
+                var model = new ConsultationViewModel
+                {
+                    ConsultationId = (int)consultation.ConsultationId,
+                    PatientId = consultation.PatientId,
+                    PatientName = $"{consultation.Patient.Name} ({consultation.Patient.Species})",
+                    //VetId = consultation.VetId,
+                    VetName = consultation.Vet.Username,
+                    ConsultationDate = DateTime.Now,
+                    Diagnosis = consultation.Diagnosis,
+                    Notes = consultation.Notes,
+                    Weight = consultation.Weight,
+                    Temperature = consultation.Temperature,
+                    HeartRate = consultation.HeartRate,
+                    RespirationRate = consultation.RespirationRate,
+                    IsFollowUp = consultation.IsFollowUp ?? false,
+                    FollowUpDate = consultation.FollowUpDate
+                };
+
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error loading consultation edit form for ID {id}");
+                return StatusCode(500, "An error occurred while loading the form");
+            }
         }
 
         // POST: Consultations/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Veterinarian")]
         public async Task<IActionResult> Edit(int id, ConsultationViewModel model)
         {
-            if (id != model.ConsultationId) return NotFound();
-
-            if (ModelState.IsValid)
+            if (id != model.ConsultationId)
             {
-                try
+                return NotFound();
+            }
+
+            try
+            {
+                var vetId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+                if (ModelState.IsValid)
                 {
-                    var consultation = await _context.Consultations.FindAsync(id);
-                    if (consultation == null) return NotFound();
+                    var consultation = await _context.Consultations
+                        .FirstOrDefaultAsync(c => c.ConsultationId == id && c.VetId == vetId);
+
+                    if (consultation == null)
+                    {
+                        return NotFound();
+                    }
 
                     consultation.PatientId = model.PatientId;
-                    consultation.VetId = model.VetId;
                     consultation.ConsultationDate = model.ConsultationDate;
                     consultation.Diagnosis = model.Diagnosis;
                     consultation.Notes = model.Notes;
@@ -227,39 +400,45 @@ namespace PetClinicSystem.Controllers
 
                     _context.Update(consultation);
                     await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!_context.Consultations.Any(e => e.ConsultationId == model.ConsultationId))
-                        return NotFound();
-                    else
-                        throw;
+
+                    TempData["SuccessMessage"] = "Consultation updated successfully!";
+                    return RedirectToAction("Details", new { id = consultation.ConsultationId });
                 }
 
-                return RedirectToAction(nameof(Index));
+                return View(model);
             }
-
-            // Reload dropdowns if validation fails
-            model.AvailablePatients = _context.Patients
-                .Select(p => new SelectListItem { Value = p.PatientId.ToString(), Text = p.Name })
-                .ToList();
-            model.AvailableVets = _context.Users
-                .Where(u => u.Role == "Veterinarian")
-                .Select(v => new SelectListItem { Value = v.UserId.ToString(), Text = v.Username })
-                .ToList();
-
-            return View(model);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating consultation ID {id}");
+                ModelState.AddModelError("", "An error occurred while updating the consultation");
+                return View(model);
+            }
         }
 
-        // List page
-        public async Task<IActionResult> Index()
+        // GET: Consultations/QuickActions/5
+        [Authorize(Roles = "Veterinarian")]
+        public async Task<IActionResult> QuickActions(int id)
         {
-            var consultations = await _context.Consultations
-                .Include(c => c.Patient)
-                .Include(c => c.Vet)
-                .ToListAsync();
+            try
+            {
+                var vetId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
-            return View(consultations);
+                var consultation = await _context.Consultations
+                    .Include(c => c.Patient)
+                    .FirstOrDefaultAsync(c => c.ConsultationId == id && c.VetId == vetId);
+
+                if (consultation == null)
+                {
+                    return NotFound();
+                }
+
+                return View(consultation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error loading quick actions for consultation {id}");
+                return StatusCode(500, "An error occurred while loading quick actions");
+            }
         }
     }
 }

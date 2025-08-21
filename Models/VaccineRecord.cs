@@ -26,4 +26,8 @@ public partial class VaccineRecord
     public virtual Patient Patient { get; set; } = null!;
 
     public virtual Vaccination Vaccine { get; set; } = null!;
+    public int ConsultationId { get; set; }
+
+    public virtual Consultation Consultation { get; set; } = null!;
+
 }

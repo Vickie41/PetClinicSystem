@@ -122,8 +122,7 @@ namespace PetClinicSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Schedule(AppointmentViewModel model)
         {
-            if (ModelState.IsValid)
-            {
+            
                 // Verify vet exists
                 var vetExists = await _context.Users.AnyAsync(u => u.UserId == model.VetId && u.Role == "Veterinarian");
                 if (!vetExists)
@@ -166,7 +165,7 @@ namespace PetClinicSystem.Controllers
                     await _context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
                 }
-            }
+            
 
             // Repopulate dropdowns if model is invalid
             model.AvailablePets = await GetActivePets();

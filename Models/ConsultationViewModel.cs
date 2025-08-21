@@ -11,9 +11,9 @@ namespace PetClinicSystem.Models
         [Display(Name = "Patient")]
         public int PatientId { get; set; }
 
-        [Required(ErrorMessage = "Please select a veterinarian.")]
-        [Display(Name = "Veterinarian")]
-        public int VetId { get; set; }
+        //[Required(ErrorMessage = "Please select a veterinarian.")]
+        //[Display(Name = "Veterinarian")]
+        //public int VetId { get; set; }
 
         [Required(ErrorMessage = "Consultation date is required.")]
         [Display(Name = "Consultation Date")]
@@ -21,7 +21,7 @@ namespace PetClinicSystem.Models
         public DateTime ConsultationDate { get; set; } = DateTime.Now;
 
         [Required(ErrorMessage = "Diagnosis is required.")]
-        public string Diagnosis { get; set; }
+        public string? Diagnosis { get; set; }
 
         public string Notes { get; set; }
 
@@ -48,6 +48,21 @@ namespace PetClinicSystem.Models
 
         // Dropdown lists
         public List<SelectListItem> AvailablePatients { get; set; } = new List<SelectListItem>();
-        public List<SelectListItem> AvailableVets { get; set; } = new List<SelectListItem>();
+        //public List<SelectListItem> AvailableVets { get; set; } = new List<SelectListItem>();
+        // Display properties
+        public string PatientName { get; set; }
+        public string VetName { get; set; }
+        public int VetId { get; set; } // For internal use only, not for form binding
+
+    }
+
+    public class FutureDateAttribute : ValidationAttribute
+    {
+        public override bool IsValid(object value)
+        {
+            if (value == null) return true;
+            var date = (DateTime)value;
+            return date > DateTime.Today;
+        }
     }
 }

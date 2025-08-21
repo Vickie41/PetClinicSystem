@@ -41,11 +41,34 @@
             left: 0;
             z-index: 1000;
             box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
         }
 
             #sidebar.active {
                 margin-left: -250px;
             }
+
+        /* Content area styling */
+        #content {
+            width: calc(100% - 250px);
+            min-height: 100vh;
+            transition: all 0.3s ease;
+            margin-left: 250px;
+            position: relative;
+            padding-top: 20px;
+        }
+        /* Fixed header section */
+        .sidebar-header {
+            flex-shrink: 0;
+        }
+
+        /* Scrollable menu section */
+        .sidebar-menu {
+            flex: 1;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
 
         /* Content area styling */
         #content {
@@ -105,6 +128,7 @@
             padding: 20px 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             text-align: center;
+            flex-shrink: 0;
         }
 
         .profile-image img {
@@ -197,6 +221,9 @@
                     </div>
                 </div>
             }
+
+
+            <div class="sidebar-menu">
 
             <ul class="list-unstyled components">
                 @if (User.Identity.IsAuthenticated)
@@ -422,6 +449,35 @@
                                         </a>
                                     </li>
                                 }
+                                @if (User.IsInRole("Veterinarian"))
+                                {
+                                    <li>
+                                        <a asp-controller="Report" asp-action="DiagnosticReports" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "System" ? "active" : "")">
+                                            <i class="fas fa-diagnoses"></i>
+                                            Diagnostic Reports
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a asp-controller="Report" asp-action="VaccineReports" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Financial" ? "active" : "")">
+                                            <i class="fa-solid fa-syringe"></i>                                            Vaccine Reports
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a asp-controller="Report" asp-action="PrescriptionReports" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "System" ? "active" : "")">
+                                            <i class="fa-solid fa-file-prescription"></i>                                            Prescription Reports
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a asp-controller="Report" asp-action="TreatmentReports" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Financial" ? "active" : "")">
+                                            <i class="fa-solid fa-notes-medical"></i>                                            Treatment Reports
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a asp-controller="Report" asp-action="ConsulantReports" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Financial" ? "active" : "")">
+                                            <i class="fas fa-user-md"></i>                                            Consultant Reports
+                                        </a>
+                                    </li>
+                                }
                             </ul>
                         </li>
                     }
@@ -474,6 +530,7 @@
                     </li>
                 }
             </ul>
+            </div>
         </nav>
 
 

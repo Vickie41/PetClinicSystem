@@ -1,11 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace PetClinicSystem.Models;
 
+[Table("Consultations")]  // This ensures EF queries the correct table
+
 public partial class Consultation
 {
-    public int ConsultationId { get; set; }
+    [Key]
+    //[Column("ConsultationId")] // match actual DB column
+    public int? ConsultationId { get; set; }
 
     public int AppointmentId { get; set; }
 
@@ -44,4 +50,7 @@ public partial class Consultation
     public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
 
     public virtual User Vet { get; set; } = null!;
+
+    public virtual ICollection<VaccineRecord> VaccineRecords { get; set; } = new List<VaccineRecord>();
+
 }

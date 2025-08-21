@@ -1,7 +1,7 @@
 ﻿@model PetClinicSystem.Models.Consultation
 
 @{
-    ViewData["Title"] = "Consultation Details";
+    ViewData["Title"] = $"Consultation Details - {Model.Patient?.Name}";
     ViewData["ActivePage"] = "Consultations";
 }
 
@@ -12,23 +12,37 @@
                 <i class="fas fa-notes-medical me-2"></i>@ViewData["Title"]
             </h2>
             <div class="text-muted small">
-                @Model.ConsultationDate?.ToString("MMMM dd, yyyy") with Dr. @Model.Vet?.LastName
+                @Model.ConsultationDate with @Model.Vet?.Username
             </div>
         </div>
         <div class="col-md-6 text-end">
-            <a asp-action="Edit" asp-route-id="@Model.ConsultationId" class="btn btn-primary me-2">
-                <i class="fas fa-edit me-2"></i>Edit
-            </a>
+            @if (User.IsInRole("Veterinarian"))
+            {
+                <a asp-action="QuickActions" asp-route-id="@Model.ConsultationId" class="btn btn-primary me-2">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </a>
+                <a asp-action="Edit" asp-route-id="@Model.ConsultationId" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-edit me-2"></i>Edit
+                </a>
+            }
             <a asp-action="Index" class="btn btn-outline-secondary">
                 <i class="fas fa-arrow-left me-2"></i>Back to List
             </a>
         </div>
     </div>
 
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <div class="row">
         <div class="col-lg-8">
             <div class="card shadow-sm mb-4">
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-file-medical me-2"></i>Consultation Notes
                     </h5>
@@ -37,44 +51,65 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <div class="fw-bold">Diagnosis</div>
-                                <div>@(string.IsNullOrEmpty(Model.Diagnosis) ? "No diagnosis recorded" : Model.Diagnosis)</div>
+                                <label class="fw-bold">Diagnosis</label>
+                                <div class="p-2 bg-light rounded">@Model.Diagnosis</div>
                             </div>
                             <div class="mb-3">
-                                <div class="fw-bold">Vital Signs</div>
-                                <div class="row">
+                                <label class="fw-bold">Vital Signs</label>
+                                <div class="row g-2">
                                     <div class="col-6">
-                                        <span class="text-muted small">Weight:</span>
-                                        <div>@(Model.Weight?.ToString("0.0") ?? "--") kg</div>
+                                        <div class="p-2 bg-light rounded">
+                                            <small class="text-muted">Weight</small>
+                                            <div>@(Model.Weight?.ToString("0.0") ?? "--") kg</div>
+                                        </div>
                                     </div>
                                     <div class="col-6">
-                                        <span class="text-muted small">Temp:</span>
-                                        <div>@(Model.Temperature?.ToString("0.0") ?? "--") °C</div>
+                                        <div class="p-2 bg-light rounded">
+                                            <small class="text-muted">Temperature</small>
+                                            <div>@(Model.Temperature?.ToString("0.0") ?? "--") °C</div>
+                                        </div>
                                     </div>
                                     <div class="col-6">
-                                        <span class="text-muted small">Heart Rate:</span>
-                                        <div>@(Model.HeartRate?.ToString() ?? "--") bpm</div>
+                                        <div class="p-2 bg-light rounded">
+                                            <small class="text-muted">Heart Rate</small>
+                                            <div>@(Model.HeartRate?.ToString() ?? "--") bpm</div>
+                                        </div>
                                     </div>
                                     <div class="col-6">
-                                        <span class="text-muted small">Respiration:</span>
-                                        <div>@(Model.RespirationRate?.ToString() ?? "--") rpm</div>
+                                        <div class="p-2 bg-light rounded">
+                                            <small class="text-muted">Respiration Rate</small>
+                                            <div>@(Model.RespirationRate?.ToString() ?? "--") rpm</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <div class="fw-bold">Notes</div>
-                                <div>@(string.IsNullOrEmpty(Model.Notes) ? "No notes recorded" : Model.Notes)</div>
+                                <label class="fw-bold">Notes</label>
+                                <div class="p-2 bg-light rounded" style="min-height: 100px;">
+                                    @if (string.IsNullOrEmpty(Model.Notes))
+                                    {
+                                        <span class="text-muted">No notes recorded</span>
+                                    }
+                                    else
+                                    {
+                                        @Model.Notes
+                                    }
+                                </div>
                             </div>
                             <div class="mb-3">
-                                <div class="fw-bold">Follow Up</div>
-                                <div>
+                                <label class="fw-bold">Follow Up</label>
+                                <div class="p-2 bg-light rounded">
                                     @if (Model.FollowUpDate.HasValue)
                                     {
                                         <span class="badge bg-@(Model.FollowUpDate < DateTime.Today ? "danger" : "info")">
                                             @Model.FollowUpDate?.ToString("MMMM dd, yyyy")
                                         </span>
+                                        @if (Model.IsFollowUp == true)
+                                        {
+                                            <span class="ms-2">(Follow-up required)</span>
+                                        }
                                     }
                                     else
                                     {
@@ -90,19 +125,27 @@
             @if (Model.ConsultationTreatments?.Any() ?? false)
             {
                 <div class="card shadow-sm mb-4">
-                    <div class="card-header">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
                             <i class="fas fa-procedures me-2"></i>Treatments
                         </h5>
+                        @if (User.IsInRole("Veterinarian"))
+                        {
+                            <a asp-controller="ConsultationTreatments" asp-action="Create" asp-route-consultationId="@Model.ConsultationId"
+                               class="btn btn-sm btn-light">
+                                <i class="fas fa-plus me-1"></i>Add Treatment
+                            </a>
+                        }
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
                                     <tr>
                                         <th>Treatment</th>
                                         <th>Details</th>
                                         <th>Cost</th>
+                                        <th>Notes</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -112,6 +155,7 @@
                                             <td>@treatment.Treatment?.Name</td>
                                             <td>@treatment.Details</td>
                                             <td>@treatment.Cost?.ToString("C")</td>
+                                            <td>@treatment.Notes</td>
                                         </tr>
                                     }
                                 </tbody>
@@ -123,20 +167,28 @@
 
             @if (Model.Prescriptions?.Any() ?? false)
             {
-                <div class="card shadow-sm">
-                    <div class="card-header">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
                             <i class="fas fa-prescription-bottle-alt me-2"></i>Prescriptions
                         </h5>
+                        @if (User.IsInRole("Veterinarian"))
+                        {
+                            <a asp-controller="Prescriptions" asp-action="Create" asp-route-consultationId="@Model.ConsultationId"
+                               class="btn btn-sm btn-light">
+                                <i class="fas fa-plus me-1"></i>Add Prescription
+                            </a>
+                        }
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table class="table table-sm">
-                                <thead>
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
                                     <tr>
                                         <th>Medication</th>
                                         <th>Dosage</th>
                                         <th>Frequency</th>
+                                        <th>Duration</th>
                                         <th>Status</th>
                                     </tr>
                                 </thead>
@@ -147,6 +199,7 @@
                                             <td>@prescription.MedicationName</td>
                                             <td>@prescription.Dosage</td>
                                             <td>@prescription.Frequency</td>
+                                            <td>@prescription.Duration</td>
                                             <td>
                                                 <span class="badge bg-@(prescription.IsDispensed ?? false ? "success" : "warning")">
                                                     @(prescription.IsDispensed ?? false ? "Dispensed" : "Pending")
@@ -160,11 +213,151 @@
                     </div>
                 </div>
             }
+
+            @if (Model.DiagnosticTests?.Any() ?? false)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-microscope me-2"></i>Diagnostic Tests
+                        </h5>
+                        @if (User.IsInRole("Veterinarian"))
+                        {
+                            <a asp-controller="DiagnosticTests" asp-action="Create" asp-route-consultationId="@Model.ConsultationId"
+                               class="btn btn-sm btn-light">
+                                <i class="fas fa-plus me-1"></i>Add Test
+                            </a>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Test Name</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Results</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var test in Model.DiagnosticTests)
+                                    {
+                                        <tr>
+                                            <td>@test.TestName</td>
+                                            <td>@test.TestDate</td>
+                                            <td>
+                                                <span class="badge bg-@(test.Status == "Completed" ? "success" :
+                                                                                                                      test.Status == "Pending" ? "warning" : "secondary")">
+                                            @test.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(test.Results))
+                                                {
+                                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal"
+                                                            data-bs-target="#testResultsModal-@test.TestId">
+                                                        View Results
+                                                    </button>
+
+                                                    <!-- Results Modal -->
+                                                    <div class="modal fade" id="testResultsModal-@test.TestId" tabindex="-1" aria-hidden="true">
+                                                        <div class="modal-dialog modal-lg">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">@test.TestName Results</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <pre>@test.Results</pre>
+                                                                    @if (!string.IsNullOrEmpty(test.FilePath))
+                                                                    {
+                                                                        <div class="mt-3">
+                                                                            <a href="@test.FilePath" target="_blank" class="btn btn-primary">
+                                                                                <i class="fas fa-file-download me-2"></i>Download Report
+                                                                            </a>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">No results yet</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.VaccineRecords?.Any() ?? false)
+            {
+                <div class="card shadow-sm">
+                    <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-syringe me-2"></i>Vaccinations
+                        </h5>
+                        @if (User.IsInRole("Veterinarian"))
+                        {
+                            <a asp-controller="VaccineRecords" asp-action="Create" asp-route-consultationId="@Model.ConsultationId"
+                               class="btn btn-sm btn-light">
+                                <i class="fas fa-plus me-1"></i>Add Vaccination
+                            </a>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Vaccine</th>
+                                        <th>Date Given</th>
+                                        <th>Next Due</th>
+                                        <th>Administered By</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var vaccine in Model.VaccineRecords)
+                                    {
+                                        <tr>
+                                            <td>@vaccine.Vaccine?.Name</td>
+                                            <td>@vaccine.DateGiven.ToString("d")</td>
+                                            <td>
+                                                @if (vaccine.NextDueDate.HasValue)
+                                                {
+                                                    <span class="badge bg-@(vaccine.NextDueDate < DateOnly.FromDateTime(DateTime.Today) ? "danger" : "success")">
+                                                        @vaccine.NextDueDate?.ToString("d")
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">N/A</span>
+                                                }
+                                            </td>
+                                            <td>@vaccine.AdministeredByNavigation?.Username</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
 
         <div class="col-lg-4">
             <div class="card shadow-sm mb-4">
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-paw me-2"></i>Patient Information
                     </h5>
@@ -173,7 +366,13 @@
                     <div class="d-flex align-items-center mb-3">
                         @if (!string.IsNullOrEmpty(Model.Patient?.PhotoPath))
                         {
-                            <img src="@Model.Patient.PhotoPath" class="avatar-lg rounded-circle me-3" alt="@Model.Patient.Name">
+                            <img src="@Model.Patient.PhotoPath" class="rounded-circle me-3" style="width: 80px; height: 80px; object-fit: cover;" alt="@Model.Patient.Name">
+                        }
+                        else
+                        {
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px;">
+                                <i class="fas fa-paw fa-2x text-muted"></i>
+                            </div>
                         }
                         <div>
                             <h5 class="mb-0">@Model.Patient?.Name</h5>
@@ -183,7 +382,7 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <div class="fw-bold">Age</div>
+                                <label class="fw-bold">Age</label>
                                 <div>
                                     @if (Model.Patient?.DateOfBirth.HasValue ?? false)
                                     {
@@ -205,17 +404,17 @@
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <div class="fw-bold">Gender</div>
+                                <label class="fw-bold">Gender</label>
                                 <div>@Model.Patient?.Gender</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <div class="fw-bold">Owner</div>
+                                <label class="fw-bold">Owner</label>
                                 <div>@Model.Patient?.Owner?.FirstName @Model.Patient?.Owner?.LastName</div>
                             </div>
                             <div class="mb-3">
-                                <div class="fw-bold">Contact</div>
+                                <label class="fw-bold">Contact</label>
                                 <div>@Model.Patient?.Owner?.Phone</div>
                             </div>
                         </div>
@@ -224,25 +423,23 @@
             </div>
 
             <div class="card shadow-sm">
-                <div class="card-header">
+                <div class="card-header bg-primary text-white">
                     <h5 class="card-title mb-0">
                         <i class="fas fa-user-md me-2"></i>Veterinarian
                     </h5>
                 </div>
                 <div class="card-body">
                     <div class="d-flex align-items-center mb-3">
-                        @if (!string.IsNullOrEmpty(Model.Vet?.FirstName))
-                        {
-                            <img src="/images/default-avatar.png" class="avatar-lg rounded-circle me-3" alt="No photo available">
-
-                        }
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3" style="width: 80px; height: 80px;">
+                            <i class="fas fa-user-md fa-2x text-muted"></i>
+                        </div>
                         <div>
-                            <h5 class="mb-0">Dr. @Model.Vet?.FirstName @Model.Vet?.LastName</h5>
-                            <div class="text-muted">@Model.Vet?.Role</div>
+                            <h5 class="mb-0">@Model.Vet?.Username</h5>
+                            <div class="text-muted">Veterinarian</div>
                         </div>
                     </div>
                     <div class="mb-3">
-                        <div class="fw-bold">Contact</div>
+                        <label class="fw-bold">Contact</label>
                         <div>@Model.Vet?.Phone</div>
                         <div>@Model.Vet?.Email</div>
                     </div>
@@ -251,3 +448,13 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    </script>
+}

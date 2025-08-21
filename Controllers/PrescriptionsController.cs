@@ -132,7 +132,7 @@ using System.Threading.Tasks;
 
 namespace PetClinicSystem.Controllers
 {
-    [Authorize(Roles = "Staff,Veterinarian")]
+    [Authorize(Roles = "Staff,Veterinarian,Admin")]
     public class PrescriptionsController : Controller
     {
         private readonly PetClinicContext _context;
@@ -289,7 +289,7 @@ namespace PetClinicSystem.Controllers
 
                     if (consultation != null)
                     {
-                        model.ConsultationId = consultation.ConsultationId;
+                        model.ConsultationId = consultation.ConsultationId ?? 0;
                         model.PatientId = consultation.PatientId;
                         model.PatientName = consultation.Patient.Name;
                     }

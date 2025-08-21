@@ -126,7 +126,171 @@ namespace PetClinicSystem.Controllers
             return View(model);
         }
 
-        
+
+
+
+
+        // GET: Reports/PrescriptionReports
+        public IActionResult PrescriptionReports(DateTime? startDate, DateTime? endDate)
+        {
+            startDate ??= DateTime.Today.AddMonths(-3);
+            endDate ??= DateTime.Today.AddDays(1);
+
+            var prescriptions = _context.Prescriptions
+                .Include(p => p.Consultation)
+                .Where(p => p.PrescribedDate >= startDate && p.PrescribedDate <= endDate)
+                .OrderByDescending(p => p.PrescribedDate)
+                .ToList();
+
+            // If you need patient information, you might need to load it separately
+            var patientIds = prescriptions.Select(p => p.Consultation.PatientId).Distinct();
+            var patients = _context.Patients.Where(p => patientIds.Contains(p.PatientId)).ToDictionary(p => p.PatientId);
+
+            var model = new PrescriptionReportsViewModel
+            {
+                Prescriptions = prescriptions,
+                Patients = patients,  // Add this to your ViewModel
+                StartDate = startDate.Value,
+                EndDate = endDate.Value,
+                TotalPrescriptions = prescriptions.Count,
+                MostPrescribedMedication = prescriptions
+                    .GroupBy(p => p.MedicationName)
+                    .OrderByDescending(g => g.Count())
+                    .FirstOrDefault()?.Key ?? "N/A"
+            };
+
+            return View(model);
+        }
+
+        // GET: Reports/VaccineReports
+        public IActionResult VaccineReports(DateTime? startDate, DateTime? endDate)
+        {
+            var viewModel = new VaccineReportsViewModel
+            {
+                StartDate = startDate ?? DateTime.Now.AddMonths(-1),
+                EndDate = endDate ?? DateTime.Now
+            };
+
+            // Convert DateTime to DateOnly for comparison
+            var startDateOnly = DateOnly.FromDateTime(viewModel.StartDate);
+            var endDateOnly = DateOnly.FromDateTime(viewModel.EndDate);
+
+            // Query VaccineRecords within date range
+            var vaccineRecords = _context.VaccineRecords
+                .Include(vr => vr.Vaccine)
+                .Include(vr => vr.Patient)
+                    .ThenInclude(p => p.Owner)
+                .Include(vr => vr.AdministeredByNavigation)
+                .Where(vr => vr.DateGiven >= startDateOnly && vr.DateGiven <= endDateOnly)
+                .ToList();
+
+            viewModel.VaccineRecords = vaccineRecords;
+            viewModel.TotalVaccines = vaccineRecords.Count;
+
+            // Get most common vaccine
+            viewModel.MostCommonVaccine = vaccineRecords
+                .GroupBy(vr => vr.Vaccine.Name)
+                .OrderByDescending(g => g.Count())
+                .FirstOrDefault()?.Key ?? "None";
+
+            return View(viewModel);
+        }
+
+        // GET: Reports/TreatmentReports
+        public IActionResult TreatmentReports(DateTime? startDate, DateTime? endDate)
+        {
+            startDate ??= DateTime.Today.AddMonths(-6);
+            endDate ??= DateTime.Today.AddDays(1);
+
+            var consultationTreatments = _context.ConsultationTreatments
+                .Include(ct => ct.Consultation)
+                    .ThenInclude(c => c.Patient)
+                        .ThenInclude(p => p.Owner)
+                .Include(ct => ct.Consultation)
+                    .ThenInclude(c => c.Vet)  // Use the Vet navigation property
+                .Include(ct => ct.Treatment)
+                .Where(ct => ct.Consultation.ConsultationDate >= startDate && ct.Consultation.ConsultationDate <= endDate)
+                .OrderByDescending(ct => ct.Consultation.ConsultationDate)
+                .ToList();
+
+            var model = new TreatmentReportsViewModel
+            {
+                ConsultationTreatments = consultationTreatments,
+                StartDate = startDate.Value,
+                EndDate = endDate.Value,
+                TotalTreatments = consultationTreatments.Count,
+                MostCommonTreatment = consultationTreatments
+                    .GroupBy(ct => ct.Treatment.Name)
+                    .OrderByDescending(g => g.Count())
+                    .FirstOrDefault()?.Key ?? "N/A"
+            };
+
+            return View(model);
+        }
+
+        // GET: Reports/DiagnosticReports
+        public IActionResult DiagnosticReports(DateTime? startDate, DateTime? endDate)
+        {
+            startDate ??= DateTime.Today.AddMonths(-6);
+            endDate ??= DateTime.Today.AddDays(1);
+
+            var diagnostics = _context.DiagnosticTests
+                .Include(d => d.Consultation)
+                    .ThenInclude(c => c.Patient)
+                        .ThenInclude(p => p.Owner)
+                .Include(d => d.Consultation)
+                    .ThenInclude(c => c.Vet)
+                .Where(d => d.TestDate >= startDate && d.TestDate <= endDate)
+                .OrderByDescending(d => d.TestDate)
+                .ToList();
+
+            var model = new DiagnosticReportsViewModel
+            {
+                Diagnostics = diagnostics,
+                StartDate = startDate.Value,
+                EndDate = endDate.Value,
+                TotalTests = diagnostics.Count,
+                MostCommonTest = diagnostics
+                    .GroupBy(d => d.TestName)
+                    .OrderByDescending(g => g.Count())
+                    .FirstOrDefault()?.Key ?? "N/A"
+            };
+
+            return View(model);
+        }
+
+        // GET: Reports/ConsulantReports
+        public IActionResult ConsulantReports(DateTime? startDate, DateTime? endDate)
+        {
+            startDate ??= DateTime.Today.AddMonths(-3);
+            endDate ??= DateTime.Today.AddDays(1);
+
+            var consultations = _context.Consultations
+                .Include(c => c.Vet)
+                .Where(c => c.ConsultationDate >= startDate && c.ConsultationDate <= endDate)
+                .OrderByDescending(c => c.ConsultationDate)
+                .ToList();
+
+            // Load patient information separately
+            var patientIds = consultations.Select(c => c.PatientId).Distinct();
+            var patients = _context.Patients
+                .Where(p => patientIds.Contains(p.PatientId))
+                .ToDictionary(p => p.PatientId);
+
+            var model = new ConsultantReportsViewModel
+            {
+                Consultations = consultations,
+                Patients = patients,  // Add this to your ViewModel
+                StartDate = startDate.Value,
+                EndDate = endDate.Value,
+                TotalConsultations = consultations.Count,
+                ConsultationsByVet = consultations
+                    .GroupBy(c => c.Vet.FirstName + " " + c.Vet.LastName)
+                    .ToDictionary(g => g.Key, g => g.Count())
+            };
+
+            return View(model);
+        }
     }
 
 }

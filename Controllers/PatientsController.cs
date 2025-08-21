@@ -51,7 +51,7 @@ namespace PetClinicSystem.Controllers
         //    return View(patients);
         //}
 
-        [Authorize(Roles = "Client,Admin,Staff")]
+        [Authorize(Roles = "Client,Admin,Staff,Veterinarian")]
         public async Task<IActionResult> Index()
         {
             try
@@ -67,7 +67,7 @@ namespace PetClinicSystem.Controllers
                 }
 
                 // For Admin and Staff - show all patients
-                if (User.IsInRole("Admin") || User.IsInRole("Staff"))
+                if (User.IsInRole("Admin") || User.IsInRole("Staff") || User.IsInRole("Veterinarian"))
                 {
                     var allPatients = await _context.Patients
                         .Include(p => p.Owner)

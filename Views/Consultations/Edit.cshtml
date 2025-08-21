@@ -1,89 +1,139 @@
-﻿@model PetClinicSystem.Models.Consultation
+﻿@model PetClinicSystem.Models.ConsultationViewModel
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Edit Consultation";
+    ViewData["ActivePage"] = "Consultations";
 }
 
-<h1>Edit</h1>
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2 class="page-title">
+                <i class="fas fa-notes-medical me-2"></i>@ViewData["Title"]
+            </h2>
+        </div>
+    </div>
 
-<h4>Consultation</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="ConsultationId" />
-            <div class="form-group">
-                <label asp-for="AppointmentId" class="control-label"></label>
-                <select asp-for="AppointmentId" class="form-control" asp-items="ViewBag.AppointmentId"></select>
-                <span asp-validation-for="AppointmentId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="VetId" class="control-label"></label>
-                <select asp-for="VetId" class="form-control" asp-items="ViewBag.VetId"></select>
-                <span asp-validation-for="VetId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PatientId" class="control-label"></label>
-                <select asp-for="PatientId" class="form-control" asp-items="ViewBag.PatientId"></select>
-                <span asp-validation-for="PatientId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ConsultationDate" class="control-label"></label>
-                <input asp-for="ConsultationDate" class="form-control" />
-                <span asp-validation-for="ConsultationDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Weight" class="control-label"></label>
-                <input asp-for="Weight" class="form-control" />
-                <span asp-validation-for="Weight" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Temperature" class="control-label"></label>
-                <input asp-for="Temperature" class="form-control" />
-                <span asp-validation-for="Temperature" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="HeartRate" class="control-label"></label>
-                <input asp-for="HeartRate" class="form-control" />
-                <span asp-validation-for="HeartRate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="RespirationRate" class="control-label"></label>
-                <input asp-for="RespirationRate" class="form-control" />
-                <span asp-validation-for="RespirationRate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Diagnosis" class="control-label"></label>
-                <input asp-for="Diagnosis" class="form-control" />
-                <span asp-validation-for="Diagnosis" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Notes" class="control-label"></label>
-                <input asp-for="Notes" class="form-control" />
-                <span asp-validation-for="Notes" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="FollowUpDate" class="control-label"></label>
-                <input asp-for="FollowUpDate" class="form-control" />
-                <span asp-validation-for="FollowUpDate" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="IsFollowUp" class="control-label"></label>
-                <input asp-for="IsFollowUp" class="form-control" />
-                <span asp-validation-for="IsFollowUp" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="Edit">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <input type="hidden" asp-for="ConsultationId" />
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="PatientId" class="form-label">Patient</label>
+                            <select asp-for="PatientId" class="form-select" asp-items="Model.AvailablePatients">
+                                <option value="">Select Patient</option>
+                            </select>
+                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Veterinarian</label>
+                            <input type="text" class="form-control" value="@Model.VetName" disabled>
+                            <small class="text-muted">Consultation cannot be reassigned to another veterinarian</small>
+                            <input type="hidden" name="VetId" value="@Model.VetId" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ConsultationDate" class="form-label">Date</label>
+                            <input asp-for="ConsultationDate" type="datetime-local" class="form-control" />
+                            <span asp-validation-for="ConsultationDate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Weight" class="form-label">Weight (kg)</label>
+                            <input asp-for="Weight" class="form-control" />
+                            <span asp-validation-for="Weight" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Temperature" class="form-label">Temperature (°C)</label>
+                            <input asp-for="Temperature" class="form-control" />
+                            <span asp-validation-for="Temperature" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="HeartRate" class="form-label">Heart Rate (bpm)</label>
+                            <input asp-for="HeartRate" class="form-control" />
+                            <span asp-validation-for="HeartRate" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="RespirationRate" class="form-label">Respiration Rate (bpm)</label>
+                            <input asp-for="RespirationRate" class="form-control" />
+                            <span asp-validation-for="RespirationRate" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label asp-for="Diagnosis" class="form-label">Diagnosis</label>
+                            <input asp-for="Diagnosis" class="form-control" />
+                            <span asp-validation-for="Diagnosis" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label">Notes</label>
+                            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Notes" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="mb-3 form-check">
+                            <input asp-for="IsFollowUp" class="form-check-input" />
+                            <label asp-for="IsFollowUp" class="form-check-label">Follow Up Required</label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="FollowUpDate" class="form-label">Follow Up Date</label>
+                            <input asp-for="FollowUpDate" type="date" class="form-control" />
+                            <span asp-validation-for="FollowUpDate" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a asp-action="Details" asp-route-id="@Model.ConsultationId" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        $(document).ready(function() {
+            // Format datetime for the input field
+            if ($('#ConsultationDate').val()) {
+                const date = new Date($('#ConsultationDate').val());
+                const formattedDate = date.toISOString().slice(0, 16);
+                $('#ConsultationDate').val(formattedDate);
+            }
+
+            // Show/hide follow up date based on checkbox
+            $('#IsFollowUp').change(function() {
+                $('#FollowUpDate').closest('.mb-3').toggle(this.checked);
+            }).trigger('change');
+        });
+    </script>
 }

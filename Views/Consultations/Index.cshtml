@@ -10,16 +10,26 @@
         <div class="col-md-6">
             <h2 class="page-title">
                 <i class="fas fa-notes-medical me-2"></i>@ViewData["Title"]
+                
             </h2>
         </div>
         <div class="col-md-6 text-end">
-            <div class="input-group" style="max-width: 300px;">
-                <input type="text" class="form-control" placeholder="Search records..." id="searchInput">
-                <button class="btn btn-outline-secondary" type="button">
-                    <i class="fas fa-search"></i>
-                </button>
+            <div class="d-flex justify-content-end align-items-center gap-3">
+                <div class="input-group" style="max-width: 300px;">
+                    <input type="text" class="form-control" placeholder="Search records..." id="searchInput">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                @if (User.IsInRole("Veterinarian") )
+                {
+                    <a asp-action="Create" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>New Consultation
+                    </a>
+                }
             </div>
         </div>
+       
     </div>
 
     <div class="card shadow-sm">
@@ -45,7 +55,7 @@
                                     <div class="d-flex align-items-center">
                                         @if (!string.IsNullOrEmpty(item.Patient?.PhotoPath))
                                         {
-                                            <img src="@item.Patient.PhotoPath" class="avatar-xs rounded-circle me-2" alt="@item.Patient.Name">
+                                            <img src="@item.Patient.PhotoPath" width="80" height="80" class="avatar-xs rounded-circle me-2" alt="@item.Patient.Name">
                                         }
                                         @item.Patient?.Name
                                     </div>
