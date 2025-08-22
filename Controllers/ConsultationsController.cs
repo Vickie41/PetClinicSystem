@@ -120,23 +120,188 @@ namespace PetClinicSystem.Controllers
 
         // GET: Consultations/Details/5
         // GET: Consultations/Details/5
+        //public async Task<IActionResult> Details(int id)
+        //{
+        //    try
+        //    {
+        //        // Load the consultation with all related data
+        //        var consultation = await _context.Consultations
+        //            .Include(c => c.Patient)
+        //                .ThenInclude(p => p.Owner)
+        //            .Include(c => c.Vet)
+        //            .Include(c => c.ConsultationTreatments)
+        //                .ThenInclude(ct => ct.Treatment)
+        //            .Include(c => c.Prescriptions)
+        //            .Include(c => c.DiagnosticTests)
+        //            .Include(c => c.VaccineRecords)
+        //                .ThenInclude(vr => vr.Vaccine)
+        //            .FirstOrDefaultAsync(c => c.ConsultationId == id);
+
+        //        if (consultation == null)
+        //        {
+        //            return NotFound();
+        //        }
+
+        //        // Verify access for veterinarians
+        //        if (User.IsInRole("Veterinarian"))
+        //        {
+        //            var vetId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+        //            if (consultation.VetId != vetId)
+        //            {
+        //                return Forbid();
+        //            }
+        //        }
+
+        //        return View(consultation);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, $"Error loading consultation details for ID {id}");
+
+        //        TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
+        //        if (ex.InnerException != null)
+        //        {
+        //            TempData["ErrorMessage"] += $" - {ex.InnerException.Message}";
+        //        }
+
+        //        return RedirectToAction("Index");
+        //    }
+        //}
+
+        // GET: Consultations/Details/5
         public async Task<IActionResult> Details(int id)
         {
             try
             {
-                // Load the consultation with all related data
-                var consultation = await _context.Consultations
-                    .Include(c => c.Patient)
-                        .ThenInclude(p => p.Owner)
-                    .Include(c => c.Vet)
-                    .Include(c => c.ConsultationTreatments)
-                        .ThenInclude(ct => ct.Treatment)
-                    .Include(c => c.Prescriptions)
-                    .Include(c => c.DiagnosticTests)
-                    .Include(c => c.VaccineRecords)
-                        .ThenInclude(vr => vr.Vaccine)
-                    .FirstOrDefaultAsync(c => c.ConsultationId == id);
+                    var consultation = await (
+                                            from c in _context.Consultations
+                                            join p in _context.Patients on c.PatientId equals p.PatientId into patientJoin
+                                            from p in patientJoin.DefaultIfEmpty()
 
+                                            join o in _context.Owners on p.OwnerId equals o.OwnerId into ownerJoin
+                                            from o in ownerJoin.DefaultIfEmpty()
+
+                                            join u in _context.Users on c.VetId equals u.UserId into vetJoin
+                                            from u in vetJoin.DefaultIfEmpty()
+
+                                            join ct in _context.ConsultationTreatments on c.ConsultationId equals ct.ConsultationId into ctJoin
+                                            from ct in ctJoin.DefaultIfEmpty()
+
+                                            join t in _context.Treatments on ct.TreatmentId equals t.TreatmentId into tJoin
+                                            from t in tJoin.DefaultIfEmpty()
+
+                                            join pr in _context.Prescriptions on c.ConsultationId equals pr.ConsultationId into prJoin
+                                            from pr in prJoin.DefaultIfEmpty()
+
+                                            join dt in _context.DiagnosticTests on c.ConsultationId equals dt.ConsultationId into dtJoin
+                                            from dt in dtJoin.DefaultIfEmpty()
+
+                                            join vr in _context.VaccineRecords on c.PatientId equals vr.PatientId into vrJoin
+                                            from vr in vrJoin.DefaultIfEmpty()
+
+                                            join vac in _context.Vaccinations on vr.VaccineId equals vac.VaccineId into vacJoin
+                                            from vac in vacJoin.DefaultIfEmpty()
+
+                                            where c.ConsultationId == id
+                                            select new
+                                            {
+                                                // Consultation
+                                                c.ConsultationId,
+                                                c.AppointmentId,
+                                                c.VetId,
+                                                c.PatientId,
+                                                c.ConsultationDate,
+                                                c.Weight,
+                                                c.Temperature,
+                                                c.HeartRate,
+                                                c.RespirationRate,
+                                                c.Diagnosis,
+                                                c.Notes,
+                                                c.FollowUpDate,
+                                                c.IsFollowUp,
+
+                                                // Patient
+                                                Patient = new
+                                                {
+                                                    p.PatientId,
+                                                    p.Name,
+                                                    p.Species,
+                                                    p.Breed,
+                                                    p.DateOfBirth,
+                                                    p.Gender
+                                                },
+
+                                                // Owner
+                                                Owner = o == null ? null : new
+                                                {
+                                                    o.OwnerId,
+                                                    o.FirstName,
+                                                    o.LastName,
+                                                    o.Email,
+                                                    o.Phone
+                                                },
+
+                                                // Vet
+                                                Vet = u == null ? null : new
+                                                {
+                                                    u.UserId,
+                                                    u.Username,
+                                                    UserEmail = u.Email,
+                                                    u.Role,
+                                                    u.FirstName,
+                                                    u.LastName
+                                                },
+
+                                                // Treatment
+                                                Treatment = ct == null ? null : new
+                                                {
+                                                    ct.ConsultationTreatmentId,
+                                                    ct.TreatmentId,
+                                                    //t.TreatmentId,
+                                                    TreatmentName = t.Name,
+                                                    TreatmentDescription = t.Description,
+                                                    TreatmentCost = t.DefaultCost
+                                                },
+
+                                                // Prescription
+                                                Prescription = pr == null ? null : new
+                                                {
+                                                    pr.PrescriptionId,
+                                                    pr.MedicationName,
+                                                    pr.Dosage,
+                                                    pr.Frequency,
+                                                    pr.Duration,
+                                                    pr.Instructions
+                                                },
+
+                                                // Diagnostic Test
+                                                DiagnosticTest = dt == null ? null : new
+                                                {
+                                                    dt.TestId,
+                                                    dt.TestName,
+                                                    dt.TestDate,
+                                                    dt.Results
+                                                },
+
+                                                // Vaccine Record
+                                                VaccineRecord = vr == null ? null : new
+                                                {
+                                                    VaccineRecordId = vr.RecordId,
+                                                    vr.VaccineId,
+                                                    VaccinationDate = vr.DateGiven,
+                                                    vr.NextDueDate,
+
+                                                    Vaccine = vac == null ? null : new
+                                                    {
+                                                        vac.VaccineId,
+                                                        VaccineName = vac.Name,
+                                                        VaccineDescription = vac.Description
+                                                    }
+                                                }
+                                            }).FirstOrDefaultAsync();
+
+
+                Console.WriteLine($"Consultation ID: {id}");
                 if (consultation == null)
                 {
                     return NotFound();
@@ -146,7 +311,7 @@ namespace PetClinicSystem.Controllers
                 if (User.IsInRole("Veterinarian"))
                 {
                     var vetId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                    if (consultation.VetId != vetId)
+                    if (consultation.Vet.UserId != vetId)
                     {
                         return Forbid();
                     }
@@ -167,8 +332,6 @@ namespace PetClinicSystem.Controllers
                 return RedirectToAction("Index");
             }
         }
-
-
 
 
 

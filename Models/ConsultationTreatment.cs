@@ -5,11 +5,11 @@ namespace PetClinicSystem.Models;
 
 public partial class ConsultationTreatment
 {
-    public int ConsultationTreatmentId { get; set; }
+    public int? ConsultationTreatmentId { get; set; }
 
-    public int ConsultationId { get; set; }
+    public int? ConsultationId { get; set; }
 
-    public int TreatmentId { get; set; }
+    public int? TreatmentId { get; set; }
 
     public string? Details { get; set; }
 

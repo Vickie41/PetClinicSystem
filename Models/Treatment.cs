@@ -5,9 +5,9 @@ namespace PetClinicSystem.Models;
 
 public partial class Treatment
 {
-    public int TreatmentId { get; set; }
+    public int? TreatmentId { get; set; }
 
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; } = null!;
 
     public string? Description { get; set; }
 

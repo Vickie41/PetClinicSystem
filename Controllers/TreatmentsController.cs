@@ -101,7 +101,7 @@ namespace PetClinicSystem.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!TreatmentExists(treatment.TreatmentId))
+                    if (!TreatmentExists((int)treatment.TreatmentId))
                     {
                         return NotFound();
                     }

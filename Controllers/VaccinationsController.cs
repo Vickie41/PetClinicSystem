@@ -101,7 +101,7 @@ namespace PetClinicSystem.Controllers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!VaccinationExists(vaccination.VaccineId))
+                    if (!VaccinationExists((int)vaccination.VaccineId))
                     {
                         return NotFound();
                     }

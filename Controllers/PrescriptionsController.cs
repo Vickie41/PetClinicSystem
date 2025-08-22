@@ -375,8 +375,8 @@ namespace PetClinicSystem.Controllers
 
                 var model = new PrescriptionViewModel
                 {
-                    PrescriptionId = prescription.PrescriptionId,
-                    ConsultationId = prescription.ConsultationId,
+                    PrescriptionId =(int) prescription.PrescriptionId,
+                    ConsultationId =(int) prescription.ConsultationId,
                     PatientId = prescription.Consultation.PatientId,
                     PatientName = prescription.Consultation.Patient.Name,
                     MedicationName = prescription.MedicationName,
