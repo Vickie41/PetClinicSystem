@@ -173,162 +173,192 @@ namespace PetClinicSystem.Controllers
         {
             try
             {
-                    var consultation = await (
-                                            from c in _context.Consultations
-                                            join p in _context.Patients on c.PatientId equals p.PatientId into patientJoin
-                                            from p in patientJoin.DefaultIfEmpty()
+                // First get the main consultation with patient, owner, and vet
+                var consultationData = await (
+                    from c in _context.Consultations
+                    join p in _context.Patients on c.PatientId equals p.PatientId
+                    join o in _context.Owners on p.OwnerId equals o.OwnerId
+                    join u in _context.Users on c.VetId equals u.UserId
+                    where c.ConsultationId == id
+                    select new
+                    {
+                        // Consultation
+                        c.ConsultationId,
+                        c.AppointmentId,
+                        c.VetId,
+                        c.PatientId,
+                        c.ConsultationDate,
+                        c.Weight,
+                        c.Temperature,
+                        c.HeartRate,
+                        c.RespirationRate,
+                        c.Diagnosis,
+                        c.Notes,
+                        c.FollowUpDate,
+                        c.IsFollowUp,
 
-                                            join o in _context.Owners on p.OwnerId equals o.OwnerId into ownerJoin
-                                            from o in ownerJoin.DefaultIfEmpty()
+                        // Patient
+                        Patient = new PatientViewModel
+                        {
+                            PatientId = p.PatientId,
+                            Name = p.Name,
+                            Species = p.Species,
+                            Breed = p.Breed,
+                            DateOfBirth = p.DateOfBirth.Value,
+                            Gender = p.Gender,
+                            Color = p.Color,
+                            MicrochipId = p.MicrochipId,
+                            OwnerId = p.OwnerId,
+                            Allergies = p.Allergies,
+                            MedicalNotes = p.MedicalNotes,
+                            PhotoPath = p.PhotoPath
+                        },
 
-                                            join u in _context.Users on c.VetId equals u.UserId into vetJoin
-                                            from u in vetJoin.DefaultIfEmpty()
+                        // Owner
+                        Owner = new OwnerViewModel
+                        {
+                            OwnerId = o.OwnerId,
+                            FirstName = o.FirstName,
+                            LastName = o.LastName,
+                            Email = o.Email,
+                            Phone = o.Phone
+                        },
 
-                                            join ct in _context.ConsultationTreatments on c.ConsultationId equals ct.ConsultationId into ctJoin
-                                            from ct in ctJoin.DefaultIfEmpty()
+                        // Vet
+                        Vet = new VetViewModel
+                        {
+                            UserId = u.UserId,
+                            Username = u.Username,
+                            Email = u.Email,
+                            Role = u.Role,
+                            FirstName = u.FirstName,
+                            LastName = u.LastName
+                        }
+                    }).FirstOrDefaultAsync();
 
-                                            join t in _context.Treatments on ct.TreatmentId equals t.TreatmentId into tJoin
-                                            from t in tJoin.DefaultIfEmpty()
-
-                                            join pr in _context.Prescriptions on c.ConsultationId equals pr.ConsultationId into prJoin
-                                            from pr in prJoin.DefaultIfEmpty()
-
-                                            join dt in _context.DiagnosticTests on c.ConsultationId equals dt.ConsultationId into dtJoin
-                                            from dt in dtJoin.DefaultIfEmpty()
-
-                                            join vr in _context.VaccineRecords on c.PatientId equals vr.PatientId into vrJoin
-                                            from vr in vrJoin.DefaultIfEmpty()
-
-                                            join vac in _context.Vaccinations on vr.VaccineId equals vac.VaccineId into vacJoin
-                                            from vac in vacJoin.DefaultIfEmpty()
-
-                                            where c.ConsultationId == id
-                                            select new
-                                            {
-                                                // Consultation
-                                                c.ConsultationId,
-                                                c.AppointmentId,
-                                                c.VetId,
-                                                c.PatientId,
-                                                c.ConsultationDate,
-                                                c.Weight,
-                                                c.Temperature,
-                                                c.HeartRate,
-                                                c.RespirationRate,
-                                                c.Diagnosis,
-                                                c.Notes,
-                                                c.FollowUpDate,
-                                                c.IsFollowUp,
-
-                                                // Patient
-                                                Patient = new
-                                                {
-                                                    p.PatientId,
-                                                    p.Name,
-                                                    p.Species,
-                                                    p.Breed,
-                                                    p.DateOfBirth,
-                                                    p.Gender
-                                                },
-
-                                                // Owner
-                                                Owner = o == null ? null : new
-                                                {
-                                                    o.OwnerId,
-                                                    o.FirstName,
-                                                    o.LastName,
-                                                    o.Email,
-                                                    o.Phone
-                                                },
-
-                                                // Vet
-                                                Vet = u == null ? null : new
-                                                {
-                                                    u.UserId,
-                                                    u.Username,
-                                                    UserEmail = u.Email,
-                                                    u.Role,
-                                                    u.FirstName,
-                                                    u.LastName
-                                                },
-
-                                                // Treatment
-                                                Treatment = ct == null ? null : new
-                                                {
-                                                    ct.ConsultationTreatmentId,
-                                                    ct.TreatmentId,
-                                                    //t.TreatmentId,
-                                                    TreatmentName = t.Name,
-                                                    TreatmentDescription = t.Description,
-                                                    TreatmentCost = t.DefaultCost
-                                                },
-
-                                                // Prescription
-                                                Prescription = pr == null ? null : new
-                                                {
-                                                    pr.PrescriptionId,
-                                                    pr.MedicationName,
-                                                    pr.Dosage,
-                                                    pr.Frequency,
-                                                    pr.Duration,
-                                                    pr.Instructions
-                                                },
-
-                                                // Diagnostic Test
-                                                DiagnosticTest = dt == null ? null : new
-                                                {
-                                                    dt.TestId,
-                                                    dt.TestName,
-                                                    dt.TestDate,
-                                                    dt.Results
-                                                },
-
-                                                // Vaccine Record
-                                                VaccineRecord = vr == null ? null : new
-                                                {
-                                                    VaccineRecordId = vr.RecordId,
-                                                    vr.VaccineId,
-                                                    VaccinationDate = vr.DateGiven,
-                                                    vr.NextDueDate,
-
-                                                    Vaccine = vac == null ? null : new
-                                                    {
-                                                        vac.VaccineId,
-                                                        VaccineName = vac.Name,
-                                                        VaccineDescription = vac.Description
-                                                    }
-                                                }
-                                            }).FirstOrDefaultAsync();
-
-
-                Console.WriteLine($"Consultation ID: {id}");
-                if (consultation == null)
+                if (consultationData == null)
                 {
                     return NotFound();
                 }
 
-                // Verify access for veterinarians
+                // Veterinarian access check
                 if (User.IsInRole("Veterinarian"))
                 {
                     var vetId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-                    if (consultation.Vet.UserId != vetId)
+                    if (consultationData.Vet.UserId != vetId)
                     {
                         return Forbid();
                     }
                 }
 
-                return View(consultation);
+                // Get treatments
+                var consultationTreatments = await (
+                    from ct in _context.ConsultationTreatments
+                    join t in _context.Treatments on ct.TreatmentId equals t.TreatmentId
+                    where ct.ConsultationId == id
+                    select new ConsultationTreatmentViewModel
+                    {
+                        ConsultationTreatmentId = ct.ConsultationTreatmentId.Value,
+                        TreatmentId = ct.TreatmentId.Value,
+                        Details = ct.Details,
+                        Cost = ct.Cost,
+                        Notes = ct.Notes,
+                        Treatment = new TreatmentViewModel
+                        {
+                            TreatmentId = t.TreatmentId.Value,
+                            Name = t.Name,
+                            Description = t.Description,
+                            DefaultCost = t.DefaultCost
+                        }
+                    }).ToListAsync();
+
+                // Get prescriptions
+                var prescriptions = await (
+                    from pr in _context.Prescriptions
+                    where pr.ConsultationId == id
+                    select new PrescriptionViewModel
+                    {
+                        PrescriptionId = pr.PrescriptionId.Value,
+                        ConsultationId = pr.ConsultationId.Value,
+                        PatientId = consultationData.PatientId,
+                        MedicationName = pr.MedicationName,
+                        Dosage = pr.Dosage,
+                        Frequency = pr.Frequency,
+                        Duration = pr.Duration,
+                        Instructions = pr.Instructions,
+                        PrescribedDate = pr.PrescribedDate.Value,
+                        ExpiryDate = pr.PrescribedDate.HasValue ? pr.PrescribedDate.Value.AddDays(30) : DateTime.Now.AddDays(30),
+                        IsDispensed = pr.IsDispensed ?? false,
+                        RefillsRemaining = pr.Refills ?? 0,
+                        PatientName = consultationData.Patient.Name
+                    }).ToListAsync();
+
+                // Get diagnostic tests
+                var diagnosticTests = await (
+                    from dt in _context.DiagnosticTests
+                    where dt.ConsultationId == id
+                    select new DiagnosticTestViewModel
+                    {
+                        TestId = dt.TestId.Value,
+                        TestName = dt.TestName,
+                        TestDate = dt.TestDate.Value,
+                        Results = dt.Results
+                    }).ToListAsync();
+
+                // Get vaccine records
+                var vaccineRecords = await (
+                    from vr in _context.VaccineRecords
+                    join vac in _context.Vaccinations on vr.VaccineId equals vac.VaccineId
+                    where vr.PatientId == consultationData.Patient.PatientId
+                    select new VaccineRecordViewModel
+                    {
+                        RecordId = vr.RecordId,
+                        VaccineId = vr.VaccineId,
+                        VaccinationDate = DateTime.Today,
+                        NextDueDate = vr.DateGiven.ToDateTime(TimeOnly.MinValue).AddYears(1), // example: yearly calculation
+                        Vaccine = new VaccineViewModel
+                        {
+                            VaccineId = vac.VaccineId.Value,
+                            Name = vac.Name,
+                            Description = vac.Description
+                        }
+                    }).ToListAsync();
+
+                // Build final view model
+                var viewModel = new ConsultationDetailsViewModel
+                {
+                    ConsultationId = consultationData.ConsultationId.Value,
+                    AppointmentId = consultationData.AppointmentId,
+                    VetId = consultationData.VetId,
+                    PatientId = consultationData.PatientId,
+                    ConsultationDate = consultationData.ConsultationDate.Value,
+                    Weight = consultationData.Weight,
+                    Temperature = consultationData.Temperature,
+                    HeartRate = consultationData.HeartRate,
+                    RespirationRate = consultationData.RespirationRate,
+                    Diagnosis = consultationData.Diagnosis,
+                    Notes = consultationData.Notes,
+                    FollowUpDate = consultationData.FollowUpDate,
+                    IsFollowUp = consultationData.IsFollowUp.Value,
+                    Patient = consultationData.Patient,
+                    Owner = consultationData.Owner,
+                    Vet = consultationData.Vet,
+                    ConsultationTreatments = consultationTreatments,
+                    Prescriptions = prescriptions,
+                    DiagnosticTests = diagnosticTests,
+                    VaccineRecords = vaccineRecords
+                };
+
+                return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Error loading consultation details for ID {id}");
-
                 TempData["ErrorMessage"] = $"An error occurred: {ex.Message}";
                 if (ex.InnerException != null)
                 {
                     TempData["ErrorMessage"] += $" - {ex.InnerException.Message}";
                 }
-
                 return RedirectToAction("Index");
             }
         }
