@@ -457,11 +457,11 @@
                                             Diagnostic Reports
                                         </a>
                                     </li>
-                                    <li>
+                                   @*  <li>
                                         <a asp-controller="Report" asp-action="VaccineReports" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "Financial" ? "active" : "")">
                                             <i class="fa-solid fa-syringe"></i>                                            Vaccine Reports
                                         </a>
-                                    </li>
+                                    </li> *@
                                     <li>
                                         <a asp-controller="Report" asp-action="PrescriptionReports" class="sidebar-sublink @(ViewContext.RouteData.Values["Action"]?.ToString() == "System" ? "active" : "")">
                                             <i class="fa-solid fa-file-prescription"></i>                                            Prescription Reports

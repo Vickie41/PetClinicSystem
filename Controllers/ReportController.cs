@@ -162,6 +162,40 @@ namespace PetClinicSystem.Controllers
             return View(model);
         }
 
+        //// GET: Reports/VaccineReports
+        //public IActionResult VaccineReports(DateTime? startDate, DateTime? endDate)
+        //{
+        //    var viewModel = new VaccineReportsViewModel
+        //    {
+        //        StartDate = startDate ?? DateTime.Now.AddMonths(-1),
+        //        EndDate = endDate ?? DateTime.Now
+        //    };
+
+        //    // Convert DateTime to DateOnly for comparison
+        //    var startDateOnly = DateOnly.FromDateTime(viewModel.StartDate);
+        //    var endDateOnly = DateOnly.FromDateTime(viewModel.EndDate);
+
+        //    // Query VaccineRecords within date range
+        //    var vaccineRecords = _context.VaccineRecords
+        //        .Include(vr => vr.Vaccine)
+        //        .Include(vr => vr.Patient)
+        //            .ThenInclude(p => p.Owner)
+        //        .Include(vr => vr.AdministeredByNavigation)
+        //        .Where(vr => vr.DateGiven >= startDateOnly && vr.DateGiven <= endDateOnly)
+        //        .ToList();
+
+        //    viewModel.VaccineRecords = vaccineRecords;
+        //    viewModel.TotalVaccines = vaccineRecords.Count;
+
+        //    // Get most common vaccine
+        //    viewModel.MostCommonVaccine = vaccineRecords
+        //        .GroupBy(vr => vr.Vaccine.Name)
+        //        .OrderByDescending(g => g.Count())
+        //        .FirstOrDefault()?.Key ?? "None";
+
+        //    return View(viewModel);
+        //}
+
         // GET: Reports/VaccineReports
         public IActionResult VaccineReports(DateTime? startDate, DateTime? endDate)
         {
@@ -175,7 +209,7 @@ namespace PetClinicSystem.Controllers
             var startDateOnly = DateOnly.FromDateTime(viewModel.StartDate);
             var endDateOnly = DateOnly.FromDateTime(viewModel.EndDate);
 
-            // Query VaccineRecords within date range
+            // Query VaccineRecords within date range - REMOVE ConsultationId reference
             var vaccineRecords = _context.VaccineRecords
                 .Include(vr => vr.Vaccine)
                 .Include(vr => vr.Patient)

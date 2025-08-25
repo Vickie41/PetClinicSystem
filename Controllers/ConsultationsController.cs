@@ -633,5 +633,191 @@ namespace PetClinicSystem.Controllers
                 return StatusCode(500, "An error occurred while loading quick actions");
             }
         }
+
+
+
+        // POST: Add Treatment
+        [HttpPost]
+        public async Task<IActionResult> AddTreatment(TreatmentFormModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                var treatment = new ConsultationTreatment
+                {
+                    ConsultationId = model.ConsultationId,
+                    TreatmentId = model.SelectedTreatmentId,
+                    Details = model.Details,
+                    Cost = model.Cost,
+                    Notes = model.Notes
+                };
+
+                _context.ConsultationTreatments.Add(treatment);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Treatment added successfully!";
+            }
+            return RedirectToAction("Details", new { id = model.ConsultationId });
+        }
+
+        // POST: Add Prescription
+        [HttpPost]
+        public async Task<IActionResult> AddPrescription(PrescriptionFormModel model)
+        {
+            
+                var prescription = new Prescription
+                {
+                    ConsultationId = model.ConsultationId,
+                    MedicationName = model.MedicationName,
+                    Dosage = model.Dosage,
+                    Frequency = model.Frequency,
+                    Duration = model.Duration,
+                    Instructions = model.Instructions,
+                    PrescribedDate = DateTime.Now,
+                    IsDispensed = model.IsDispensed,
+                    Refills = model.Refills
+                };
+
+                _context.Prescriptions.Add(prescription);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Prescription added successfully!";
+            
+            return RedirectToAction("Details", new { id = model.ConsultationId });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Veterinarian")]
+        public async Task<IActionResult> AddDiagnosticTest(DiagnosticTestFormModel model)
+        {
+            
+                var diagnosticTest = new DiagnosticTest
+                {
+                    ConsultationId = model.ConsultationId,
+                    TestName = model.TestName,
+                    Results = model.Results,
+                    TestDate = DateTime.Now
+                };
+
+                _context.DiagnosticTests.Add(diagnosticTest);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Diagnostic test added successfully!";
+            
+            return RedirectToAction("Details", new { id = model.ConsultationId });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Veterinarian")]
+        public async Task<IActionResult> AddVaccine(VaccineFormModel model)
+        {
+                // Get the current user (veterinarian) ID
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+
+                var vaccineRecord = new VaccineRecord
+                {
+                    PatientId = model.PatientId,
+                    ConsultationId = model.ConsultationId,
+                    VaccineId = model.SelectedVaccineId,
+                    AdministeredBy = userId, // This field is required in your entity
+                    DateGiven = DateOnly.FromDateTime(model.DateGiven), // Convert DateTime to DateOnly
+                    NextDueDate = model.NextDueDate.HasValue ? DateOnly.FromDateTime(model.NextDueDate.Value) : null,
+                    // LotNumber and Notes can be added to your form model if needed
+                    LotNumber = null,
+                    Notes = null
+                };
+
+                _context.VaccineRecords.Add(vaccineRecord);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Vaccine added successfully!";
+            
+            return RedirectToAction("Details", new { id = model.ConsultationId });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Veterinarian")]
+        public async Task<IActionResult> DeleteTreatment(int id)
+        {
+            var treatment = await _context.ConsultationTreatments.FindAsync(id);
+            if (treatment != null)
+            {
+                var consultationId = treatment.ConsultationId;
+                _context.ConsultationTreatments.Remove(treatment);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Treatment deleted successfully!";
+                return RedirectToAction("Details", new { id = consultationId });
+            }
+            return NotFound();
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Veterinarian")]
+        public async Task<IActionResult> DeletePrescription(int id)
+        {
+            var prescription = await _context.Prescriptions.FindAsync(id);
+            if (prescription != null)
+            {
+                var consultationId = prescription.ConsultationId;
+                _context.Prescriptions.Remove(prescription);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Prescription deleted successfully!";
+                return RedirectToAction("Details", new { id = consultationId });
+            }
+            return NotFound();
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Veterinarian")]
+        public async Task<IActionResult> DeleteDiagnosticTest(int id)
+        {
+            var test = await _context.DiagnosticTests.FindAsync(id);
+            if (test != null)
+            {
+                var consultationId = test.ConsultationId;
+                _context.DiagnosticTests.Remove(test);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Diagnostic test deleted successfully!";
+                return RedirectToAction("Details", new { id = consultationId });
+            }
+            return NotFound();
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Veterinarian")]
+        public async Task<IActionResult> DeleteVaccine(int id)
+        {
+            var vaccine = await _context.VaccineRecords.FindAsync(id);
+            if (vaccine != null)
+            {
+                var consultationId = vaccine.ConsultationId;
+                _context.VaccineRecords.Remove(vaccine);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Vaccine record deleted successfully!";
+                return RedirectToAction("Details", new { id = consultationId });
+            }
+            return NotFound();
+        }
+
+        // Utility: Get list of treatments for dropdown
+        private async Task<List<SelectListItem>> GetTreatmentsSelectList()
+        {
+            return await _context.Treatments
+                .Select(t => new SelectListItem
+                {
+                    Value = t.TreatmentId.ToString(),
+                    Text = t.Name
+                }).ToListAsync();
+        }
+
+        // Utility: Get list of vaccines for dropdown
+        private async Task<List<SelectListItem>> GetVaccinesSelectList()
+        {
+            return await _context.Vaccinations
+                .Select(v => new SelectListItem
+                {
+                    Value = v.VaccineId.ToString(),
+                    Text = v.Name
+                }).ToListAsync();
+        }
     }
+
+
 }

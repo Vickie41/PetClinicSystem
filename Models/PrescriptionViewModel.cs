@@ -20,7 +20,7 @@ namespace PetClinicSystem.Models
         [Display(Name = "Medication Name")]
         public string MedicationName { get; set; }
 
-        [Required]
+        //[Required]
         public string Dosage { get; set; }
 
         [Required]
