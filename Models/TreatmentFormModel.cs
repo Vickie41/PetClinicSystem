@@ -51,12 +51,30 @@ namespace PetClinicSystem.Models
     {
         public int ConsultationId { get; set; }
 
-        [Required]
+        [Display(Name = "Test Type")]
+        public string? TestType { get; set; }
+
+        [Required(ErrorMessage = "Test name is required")]
         [Display(Name = "Test Name")]
-        public string TestName { get; set; }
+        public string TestName { get; set; } = string.Empty;
 
         [Display(Name = "Results")]
-        public string Results { get; set; }
+        public string? Results { get; set; }
+
+        // Optional: Add common diagnostic test properties
+        [Display(Name = "Test Date")]
+        [DataType(DataType.Date)]
+        public DateTime TestDate { get; set; } = DateTime.Now;
+
+        [Display(Name = "Cost")]
+        [Range(0, 10000, ErrorMessage = "Cost must be between 0 and 10,000")]
+        public decimal? Cost { get; set; }
+
+        [Display(Name = "Notes")]
+        public string? Notes { get; set; }
+
+        public List<SelectListItem> AvailableTests { get; set; } = new List<SelectListItem>();
+
     }
 
     public class VaccineFormModel
@@ -78,5 +96,7 @@ namespace PetClinicSystem.Models
         public DateTime? NextDueDate { get; set; }
 
         public List<SelectListItem> AvailableVaccines { get; set; } = new List<SelectListItem>();
+
+
     }
 }

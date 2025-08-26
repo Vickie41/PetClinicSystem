@@ -27,6 +27,13 @@
         public List<PrescriptionViewModel> Prescriptions { get; set; } = new();
         public List<DiagnosticTestViewModel> DiagnosticTests { get; set; } = new();
         public List<VaccineRecordViewModel> VaccineRecords { get; set; } = new();
+
+
+        // Form Models
+        public TreatmentFormModel TreatmentForm { get; set; } = new();
+        public PrescriptionFormModel PrescriptionForm { get; set; } = new();
+        public DiagnosticTestFormModel DiagnosticForm { get; set; } = new();
+        public VaccineFormModel VaccineForm { get; set; } = new();
     }
 
    

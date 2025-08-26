@@ -349,6 +349,33 @@ namespace PetClinicSystem.Controllers
                     VaccineRecords = vaccineRecords
                 };
 
+                // CRITICAL: Populate the form models with dropdown data
+                viewModel.TreatmentForm = new TreatmentFormModel
+                {
+                    ConsultationId = viewModel.ConsultationId,
+                    AvailableTreatments = await GetTreatmentsSelectList()
+                };
+
+                viewModel.PrescriptionForm = new PrescriptionFormModel
+                {
+                    ConsultationId = viewModel.ConsultationId,
+                    PatientId = viewModel.PatientId
+                };
+
+                viewModel.DiagnosticForm = new DiagnosticTestFormModel
+                {
+                    ConsultationId = viewModel.ConsultationId,
+                    AvailableTests = await GetTestsSelectList()
+
+                };
+
+                viewModel.VaccineForm = new VaccineFormModel
+                {
+                    ConsultationId = viewModel.ConsultationId,
+                    PatientId = viewModel.PatientId,
+                    AvailableVaccines = await GetVaccinesSelectList()
+                };
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -640,7 +667,24 @@ namespace PetClinicSystem.Controllers
         [HttpPost]
         public async Task<IActionResult> AddTreatment(TreatmentFormModel model)
         {
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+            {
+                var treatment = new ConsultationTreatment
+                {
+                    ConsultationId = model.ConsultationId,
+                    TreatmentId = model.SelectedTreatmentId,
+                    Details = model.Details,
+                    Cost = model.Cost,
+                    Notes = model.Notes
+                };
+
+                _context.ConsultationTreatments.Add(treatment);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Treatment added successfully!";
+                return RedirectToAction("Details", new { id = model.ConsultationId });
+
+            }
+            try
             {
                 var treatment = new ConsultationTreatment
                 {
@@ -655,6 +699,12 @@ namespace PetClinicSystem.Controllers
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Treatment added successfully!";
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding treatment");
+                TempData["ErrorMessage"] = "Error adding treatment: " + ex.Message;
+            }
+
             return RedirectToAction("Details", new { id = model.ConsultationId });
         }
 
@@ -693,7 +743,7 @@ namespace PetClinicSystem.Controllers
                     ConsultationId = model.ConsultationId,
                     TestName = model.TestName,
                     Results = model.Results,
-                    TestDate = DateTime.Now
+                    TestDate = model.TestDate
                 };
 
                 _context.DiagnosticTests.Add(diagnosticTest);
@@ -817,6 +867,17 @@ namespace PetClinicSystem.Controllers
                     Text = v.Name
                 }).ToListAsync();
         }
+
+        private async Task<List<SelectListItem>> GetTestsSelectList()
+        {
+            return await _context.DiagnosticTests
+                .Select(v => new SelectListItem
+                {
+                    Value = v.TestId.ToString(),
+                    Text = v.TestName
+                }).ToListAsync();
+        }
+
     }
 
 
